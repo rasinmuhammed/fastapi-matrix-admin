@@ -82,3 +82,4 @@ dmypy.json
 .env.local
 .env.*.local
 secrets.json
+.vercel

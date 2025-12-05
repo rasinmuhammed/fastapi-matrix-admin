@@ -13,7 +13,7 @@
 
 ## 🎯 Live Demo
 
-**[👉 Try the Live Demo →](https://fastapi-shadcn-admin.vercel.app)**
+**[👉 Try the Live Demo →](https://fastapi-shadcn-admin-iscte2c9y.vercel.app)**
 
 Experience the Matrix-themed UI with auto-discovered models. The demo showcases:
 - ✨ Matrix green/black aesthetic with terminal-style design
