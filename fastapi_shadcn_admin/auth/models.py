@@ -13,7 +13,7 @@ import hashlib
 
 from sqlalchemy import String, Boolean, Integer, DateTime, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 # --- SQLAlchemy Models ---
