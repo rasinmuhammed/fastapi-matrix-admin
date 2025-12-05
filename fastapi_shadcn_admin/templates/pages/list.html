@@ -1,0 +1,65 @@
+{% extends "layouts/base.html" %}
+{% import "components/buttons.html" as buttons %}
+{% import "components/cards.html" as cards %}
+{% import "components/table.html" as table %}
+
+{% block title %}{{ model_config.name }} List{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center space-x-2 text-sm text-muted-foreground">
+    <a href="{{ url_for('admin:index') }}" class="hover:text-foreground">Dashboard</a>
+    <span>/</span>
+    <span class="text-foreground">{{ model_config.name }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ model_config.name }}</h1>
+            <p class="text-muted-foreground">Manage your {{ model_config.name | lower }} records</p>
+        </div>
+        {% if not model_config.readonly %}
+        {{ buttons.link_button(url_for('admin:create', model=model_config.name), "Add New", variant="default") }}
+        {% endif %}
+    </div>
+
+    <!-- Search and Filters -->
+    {% if model_config.searchable_fields %}
+    <div class="flex items-center space-x-4">
+        <div class="relative flex-1 max-w-sm">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="search" name="search" placeholder="Search..." value="{{ search_query or '' }}"
+                class="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                hx-get="{{ url_for('admin:list', model=model_config.name) }}"
+                hx-trigger="input changed delay:500ms, search" hx-target="#data-table" hx-swap="innerHTML"
+                hx-indicator=".htmx-indicator" />
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Data Table -->
+    {% call cards.card() %}
+    <div id="data-table">
+        {{ table.data_table(
+        columns=columns,
+        rows=rows,
+        model_name=model_config.name,
+        id_field=id_field,
+        edit_url_template=edit_url_template,
+        delete_url_template=delete_url_template
+        ) }}
+
+        {% if total_pages > 1 %}
+        {{ table.pagination(page, total_pages, url_for('admin:list', model=model_config.name)) }}
+        {% endif %}
+    </div>
+    {% endcall %}
+</div>
+{% endblock %}

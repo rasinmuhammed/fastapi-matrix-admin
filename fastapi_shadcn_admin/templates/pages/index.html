@@ -1,0 +1,211 @@
+{% extends "layouts/base.html" %}
+{% import "components/cards.html" as cards %}
+
+{% block title %}Dashboard - {{ admin_title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    {# Header #}
+    <div>
+        <h1 class="text-4xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <p class="text-muted-foreground mt-2">Welcome to {{ admin_title }}</p>
+    </div>
+
+    {# KPI Cards #}
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {% for kpi in kpis %}
+        <div class="rounded-lg border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground">{{ kpi.label }}</p>
+                    <h3 class="text-3xl font-bold text-foreground mt-2">{{ kpi.value }}</h3>
+                    {% if kpi.change %}
+                    <p class="text-xs mt-2 {% if kpi.change > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                        {% if kpi.change > 0 %}↗{% else %}↘{% endif %} {{ kpi.change }}% from last month
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {% if kpi.icon == "users" %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        {% elif kpi.icon == "database" %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                        {% elif kpi.icon == "activity" %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        {% else %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        {% endif %}
+                    </svg>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Charts Section #}
+    <div class="grid gap-6 md:grid-cols-2">
+        {# Activity Chart #}
+        <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Activity Last 7 Days</h3>
+            <canvas id="activityChart" height="200"></canvas>
+        </div>
+
+        {# Model Distribution Chart #}
+        <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Records by Model</h3>
+            <canvas id="modelChart" height="200"></canvas>
+        </div>
+    </div>
+
+    {# Quick Actions #}
+    <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+        <div class="grid gap-4 md:grid-cols-3">
+            {% for model_name in registered_models[:6] %}
+            <a href="{{ url_for('admin:list', model=model_name) }}"
+                class="flex items-center space-x-3 rounded-lg border border-border p-4 hover:bg-accent hover:border-primary transition-all">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-medium text-foreground">Add {{ model_name }}</p>
+                    <p class="text-xs text-muted-foreground">Create new record</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Recent Activity Feed #}
+    {% if recent_activity %}
+    <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+        <div class="space-y-4">
+            {% for activity in recent_activity %}
+            <div class="flex items-start space-x-3 pb-4 border-b border-border last:border-0">
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full 
+                            {% if activity.action == 'create' %}bg-green-500/10{% elif activity.action == 'update' %}bg-blue-500/10{% else %}bg-red-500/10{% endif %}">
+                    <svg class="h-4 w-4 {% if activity.action == 'create' %}text-green-500{% elif activity.action == 'update' %}text-blue-500{% else %}text-red-500{% endif %}"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {% if activity.action == 'create' %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        {% elif activity.action == 'update' %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        {% else %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        {% endif %}
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-foreground">
+                        <span class="font-medium">{{ activity.username or "System" }}</span>
+                        <span class="text-muted-foreground">
+                            {% if activity.action == 'create' %}created{% elif activity.action == 'update' %}updated{%
+                            else %}deleted{% endif %}
+                        </span>
+                        <span class="font-medium">{{ activity.model_name }}</span>
+                    </p>
+                    <p class="text-xs text-muted-foreground mt-1">{{ activity.created_at }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Registered Models Grid #}
+    <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Registered Models ({{ registered_models|length }})</h3>
+        <div class="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {% for model_name in registered_models %}
+            <a href="{{ url_for('admin:list', model=model_name) }}"
+                class="flex items-center space-x-2 rounded-lg border border-border p-3 hover:bg-accent hover:border-primary transition-all group">
+                <svg class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                <span class="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{{
+                    model_name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Chart.js from CDN #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" nonce="{{ csp_nonce }}"></script>
+<script nonce="{{ csp_nonce }}">
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.activity_labels | tojson }},
+        datasets: [{
+            label: 'Actions',
+            data: {{ chart_data.activity_values | tojson }},
+        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        tension: 0.4,
+        fill: true
+        }]
+    },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+    // Model Distribution Chart
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    new Chart(modelCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.model_labels | tojson }},
+        datasets: [{
+            data: {{ chart_data.model_values | tojson }},
+        backgroundColor: [
+            'rgba(99, 102, 241, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(251, 146, 60, 0.8)',
+            'rgba(236, 72, 153, 0.8)',
+            'rgba(14, 165, 233, 0.8)',
+        ]
+        }]
+    },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

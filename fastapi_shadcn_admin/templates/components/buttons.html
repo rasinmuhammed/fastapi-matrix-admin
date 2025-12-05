@@ -1,0 +1,86 @@
+{#
+Shadcn-style Button Components for FastAPI Shadcn Admin
+
+These macros render buttons matching the Shadcn/UI design system.
+#}
+
+{# Button variants #}
+{% set button_base = "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background
+transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+disabled:pointer-events-none disabled:opacity-50" %}
+
+{% set button_variants = {
+"default": "bg-primary text-primary-foreground hover:bg-primary/90",
+"destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+"outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+"secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+"ghost": "hover:bg-accent hover:text-accent-foreground",
+"link": "text-primary underline-offset-4 hover:underline"
+} %}
+
+{% set button_sizes = {
+"default": "h-10 px-4 py-2",
+"sm": "h-9 rounded-md px-3",
+"lg": "h-11 rounded-md px-8",
+"icon": "h-10 w-10"
+} %}
+
+
+{# Primary button #}
+{% macro button(text, type="button", variant="default", size="default", disabled=false, class="") %}
+<button type="{{ type }}" class="{{ button_base }} {{ button_variants[variant] }} {{ button_sizes[size] }} {{ class }}"
+    {% if disabled %}disabled{% endif %}>
+    {{ text }}
+</button>
+{% endmacro %}
+
+
+{# Button with icon #}
+{% macro icon_button(icon_html, text="", variant="ghost", size="icon", disabled=false, class="") %}
+<button type="button" class="{{ button_base }} {{ button_variants[variant] }} {{ button_sizes[size] }} {{ class }}" {%
+    if disabled %}disabled{% endif %}>
+    {{ icon_html | safe }}
+    {% if text %}
+    <span class="ml-2">{{ text }}</span>
+    {% endif %}
+</button>
+{% endmacro %}
+
+
+{# Link styled as button #}
+{% macro link_button(href, text, variant="default", size="default", class="") %}
+<a href="{{ href }}" class="{{ button_base }} {{ button_variants[variant] }} {{ button_sizes[size] }} {{ class }}">
+    {{ text }}
+</a>
+{% endmacro %}
+
+
+{# Submit button #}
+{% macro submit_button(text="Save", variant="default", size="default", disabled=false, class="") %}
+<button type="submit" class="{{ button_base }} {{ button_variants[variant] }} {{ button_sizes[size] }} {{ class }}" {%
+    if disabled %}disabled{% endif %}>
+    {{ text }}
+</button>
+{% endmacro %}
+
+
+{# Delete button with confirmation #}
+{% macro delete_button(url, text="Delete", confirm_message="Are you sure?", class="") %}
+<button type="button"
+    class="{{ button_base }} {{ button_variants['destructive'] }} {{ button_sizes['default'] }} {{ class }}"
+    hx-delete="{{ url }}" hx-confirm="{{ confirm_message }}" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+    {{ text }}
+</button>
+{% endmacro %}
+
+
+{# Button group #}
+{% macro button_group() %}
+<div class="flex items-center space-x-2">
+    {{ caller() }}
+</div>
+{% endmacro %}

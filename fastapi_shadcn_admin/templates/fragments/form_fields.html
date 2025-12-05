@@ -1,0 +1,127 @@
+{#
+Form Fragment Template for Polymorphic Form Fields
+
+This template is loaded via HTMX when the user selects a different
+type in a discriminated union dropdown.
+#}
+
+{% import "components/inputs.html" as inputs %}
+
+{% for field in fields %}
+<div class="space-y-2">
+    {% if field.field_type == "text" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.input(field.name, type="text", value=values.get(field.name, field.default or ''),
+    placeholder=field.placeholder or '', required=field.required, readonly=field.readonly) }}
+    {% endcall %}
+
+    {% elif field.field_type == "textarea" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.textarea(field.name, value=values.get(field.name, field.default or ''), placeholder=field.placeholder or
+    '', required=field.required, readonly=field.readonly) }}
+    {% endcall %}
+
+    {% elif field.field_type == "number" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.number_input(field.name, value=values.get(field.name, field.default or ''), min=field.min_value,
+    max=field.max_value, required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "float" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.number_input(field.name, value=values.get(field.name, field.default or ''), step="0.01",
+    required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "boolean" %}
+    {{ inputs.checkbox(field.name, field.title, checked=values.get(field.name, field.default or false)) }}
+
+    {% elif field.field_type == "select" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.select(field.name, field.options, value=values.get(field.name, field.default or ''),
+    required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "email" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.input(field.name, type="email", value=values.get(field.name, field.default or ''),
+    placeholder=field.placeholder or 'email@example.com', required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "url" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.input(field.name, type="url", value=values.get(field.name, field.default or ''),
+    placeholder=field.placeholder or 'https://...', required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "date" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.input(field.name, type="date", value=values.get(field.name, field.default or ''), required=field.required)
+    }}
+    {% endcall %}
+
+    {% elif field.field_type == "datetime" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.input(field.name, type="datetime-local", value=values.get(field.name, field.default or ''),
+    required=field.required) }}
+    {% endcall %}
+
+    {% elif field.field_type == "union" %}
+    {# Discriminated union - render polymorphic select #}
+    {% call inputs.form_field(field.discriminator, field.title, field.required, description="Select the type to
+    configure") %}
+    {{ inputs.polymorphic_select(
+    name=field.discriminator,
+    options=[{"value": v, "label": v} for v in field.discriminator_values],
+    value=values.get(field.discriminator, ''),
+    fragment_url=fragment_url,
+    target_id="polymorphic-fields-" ~ field.name,
+    model_name=model_name
+    ) }}
+    {% endcall %}
+
+    {% elif field.field_type == "nested" %}
+    {# Nested object - render child fields in a fieldset #}
+    <fieldset class="space-y-4 rounded-lg border border-border p-4">
+        <legend class="px-2 text-sm font-medium text-foreground">{{ field.title }}</legend>
+        {% for child in field.children %}
+        {% include "fragments/form_fields.html" with context %}
+        {% endfor %}
+    </fieldset>
+
+    {% elif field.field_type == "complex" %}
+    {# Circuit breaker placeholder #}
+    <div class="rounded-lg border border-border bg-muted/50 p-4">
+        <p class="text-sm text-muted-foreground">
+            <svg class="inline-block h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ field.description or 'Complex object (click to edit)' }}
+        </p>
+    </div>
+
+    {% elif field.field_type == "json" %}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name),
+    description=field.description) %}
+    {{ inputs.textarea(field.name, value=values.get(field.name, field.default or '{}') | tojson, rows=5,
+    required=field.required) }}
+    {% endcall %}
+
+    {% else %}
+    {# Fallback to text input #}
+    {% call inputs.form_field(field.name, field.title, field.required, error=errors.get(field.name)) %}
+    {{ inputs.input(field.name, value=values.get(field.name, field.default or ''), required=field.required) }}
+    {% endcall %}
+    {% endif %}
+</div>
+{% endfor %}

@@ -1,0 +1,156 @@
+{#
+Shadcn-style Table Component for FastAPI Shadcn Admin
+
+Data table with sorting, actions, and responsive design.
+#}
+
+{% macro table(class="") %}
+<div class="relative w-full overflow-auto">
+    <table class="w-full caption-bottom text-sm {{ class }}">
+        {{ caller() }}
+    </table>
+</div>
+{% endmacro %}
+
+{% macro thead(class="") %}
+<thead class="[&_tr]:border-b {{ class }}">
+    {{ caller() }}
+</thead>
+{% endmacro %}
+
+{% macro tbody(class="") %}
+<tbody class="[&_tr:last-child]:border-0 {{ class }}">
+    {{ caller() }}
+</tbody>
+{% endmacro %}
+
+{% macro tr(class="") %}
+<tr class="border-b border-border transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted {{ class }}">
+    {{ caller() }}
+</tr>
+{% endmacro %}
+
+{% macro th(text="", sortable=false, sort_url="", current_sort="", class="") %}
+<th
+    class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 {{ class }}">
+    {% if sortable and sort_url %}
+    <a href="{{ sort_url }}" class="inline-flex items-center space-x-1 hover:text-foreground">
+        <span>{{ text if text else caller() }}</span>
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {% if current_sort == 'asc' %}
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            {% elif current_sort == 'desc' %}
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            {% else %}
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            {% endif %}
+        </svg>
+    </a>
+    {% else %}
+    {{ text if text else caller() }}
+    {% endif %}
+</th>
+{% endmacro %}
+
+{% macro td(class="") %}
+<td class="p-4 align-middle [&:has([role=checkbox])]:pr-0 {{ class }}">
+    {{ caller() }}
+</td>
+{% endmacro %}
+
+
+{# Data table with headers and rows #}
+{% macro data_table(columns, rows, model_name, id_field="id", edit_url_template="", delete_url_template="") %}
+{% import "components/buttons.html" as buttons %}
+
+{% call table() %}
+{% call thead() %}
+{% call tr() %}
+{% for col in columns %}
+{{ th(text=col.label, sortable=col.get('sortable', false), sort_url=col.get('sort_url', ''),
+current_sort=col.get('current_sort', '')) }}
+{% endfor %}
+{{ th(text="Actions", class="text-right") }}
+{% endcall %}
+{% endcall %}
+
+{% call tbody() %}
+{% for row in rows %}
+{% call tr() %}
+{% for col in columns %}
+{% call td() %}
+{{ row[col.field] }}
+{% endcall %}
+{% endfor %}
+
+{% call td(class="text-right") %}
+<div class="flex items-center justify-end space-x-2">
+    {% if edit_url_template %}
+    <a href="{{ edit_url_template.replace('{id}', row[id_field]|string) }}"
+        class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 w-9 hover:bg-accent hover:text-accent-foreground">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+    </a>
+    {% endif %}
+
+    {% if delete_url_template %}
+    <button type="button"
+        class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 w-9 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        hx-delete="{{ delete_url_template.replace('{id}', row[id_field]|string) }}"
+        hx-confirm="Are you sure you want to delete this item?" hx-target="closest tr" hx-swap="outerHTML swap:0.5s">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+    </button>
+    {% endif %}
+</div>
+{% endcall %}
+{% endcall %}
+{% else %}
+{% call tr() %}
+{% call td(class="text-center py-8 text-muted-foreground") %}
+<span class="col-span-full">No records found</span>
+{% endcall %}
+{% endcall %}
+{% endfor %}
+{% endcall %}
+{% endcall %}
+{% endmacro %}
+
+
+{# Pagination component #}
+{% macro pagination(page, total_pages, base_url) %}
+<nav class="flex items-center justify-between px-2 py-4">
+    <div class="text-sm text-muted-foreground">
+        Page {{ page }} of {{ total_pages }}
+    </div>
+    <div class="flex items-center space-x-2">
+        {% if page > 1 %}
+        <a href="{{ base_url }}?page={{ page - 1 }}"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+            Previous
+        </a>
+        {% else %}
+        <span
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background opacity-50 cursor-not-allowed">
+            Previous
+        </span>
+        {% endif %}
+
+        {% if page < total_pages %} <a href="{{ base_url }}?page={{ page + 1 }}"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+            Next
+            </a>
+            {% else %}
+            <span
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background opacity-50 cursor-not-allowed">
+                Next
+            </span>
+            {% endif %}
+    </div>
+</nav>
+{% endmacro %}

@@ -1,0 +1,51 @@
+{% extends "layouts/base.html" %}
+{% import "components/cards.html" as cards %}
+{% import "components/inputs.html" as inputs %}
+{% import "components/buttons.html" as buttons %}
+
+{% block title %}Login - {{ admin_title }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen items-center justify-center">
+    <div class="w-full max-w-md space-y-8">
+        {# Logo/Title #}
+        <div class="text-center">
+            <h1 class="text-4xl font-bold tracking-tight text-foreground">{{ admin_title }}</h1>
+            <p class="mt-2 text-muted-foreground">Sign in to your account</p>
+        </div>
+
+        {# Error message #}
+        {% if error %}
+        {{ cards.alert("error", error, variant="destructive") }}
+        {% endif %}
+
+        {# Login Form #}
+        {% call cards.card() %}
+        {% call cards.card_content() %}
+        <form method="POST" action="{{ url_for('admin:login_submit') }}" class="space-y-6">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}" />
+
+            {% call inputs.form_field("username", "Username or Email", required=true) %}
+            {{ inputs.input("username", type="text", placeholder="Enter your username or email", required=true) }}
+            {% endcall %}
+
+            {% call inputs.form_field("password", "Password", required=true) %}
+            {{ inputs.input("password", type="password", placeholder="Enter your password", required=true) }}
+            {% endcall %}
+
+            {{ inputs.checkbox("remember_me", "Remember me for 30 days") }}
+
+            <div class="pt-4">
+                {{ buttons.submit_button("Sign In", variant="default", class="w-full") }}
+            </div>
+        </form>
+        {% endcall %}
+        {% endcall %}
+
+        {# Footer #}
+        <p class="text-center text-sm text-muted-foreground">
+            Powered by FastAPI Shadcn Admin
+        </p>
+    </div>
+</div>
+{% endblock %}

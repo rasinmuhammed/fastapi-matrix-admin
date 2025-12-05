@@ -1,0 +1,119 @@
+{#
+Shadcn-style Card and Container Components for FastAPI Shadcn Admin
+#}
+
+{# Card component #}
+{% macro card(class="") %}
+<div class="rounded-xl border border-border bg-card text-card-foreground shadow {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro card_header(class="") %}
+<div class="flex flex-col space-y-1.5 p-6 {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro card_title(text, class="") %}
+<h3 class="text-2xl font-semibold leading-none tracking-tight {{ class }}">{{ text }}</h3>
+{% endmacro %}
+
+{% macro card_description(text, class="") %}
+<p class="text-sm text-muted-foreground {{ class }}">{{ text }}</p>
+{% endmacro %}
+
+{% macro card_content(class="") %}
+<div class="p-6 pt-0 {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro card_footer(class="") %}
+<div class="flex items-center p-6 pt-0 {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{# Alert/Badge component #}
+{% set badge_variants = {
+"default": "bg-primary text-primary-foreground hover:bg-primary/80",
+"secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+"destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/80",
+"outline": "text-foreground border border-input"
+} %}
+
+{% macro badge(text, variant="default", class="") %}
+<span
+    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 {{ badge_variants[variant] }} {{ class }}">
+    {{ text }}
+</span>
+{% endmacro %}
+
+
+{# Alert component #}
+{% set alert_variants = {
+"default": "bg-background text-foreground",
+"destructive": "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive"
+} %}
+
+{% macro alert(title="", description="", variant="default", class="") %}
+<div role="alert"
+    class="relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground {{ alert_variants[variant] }} {{ class }}">
+    {% if variant == "destructive" %}
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    {% endif %}
+    {% if title %}
+    <h5 class="mb-1 font-medium leading-none tracking-tight">{{ title }}</h5>
+    {% endif %}
+    {% if description %}
+    <div class="text-sm [&_p]:leading-relaxed">{{ description }}</div>
+    {% endif %}
+    {{ caller() if caller }}
+</div>
+{% endmacro %}
+
+
+{# Separator/Divider #}
+{% macro separator(orientation="horizontal", class="") %}
+{% if orientation == "horizontal" %}
+<div class="shrink-0 bg-border h-[1px] w-full {{ class }}"></div>
+{% else %}
+<div class="shrink-0 bg-border h-full w-[1px] {{ class }}"></div>
+{% endif %}
+{% endmacro %}
+
+
+{# Empty state #}
+{% macro empty_state(title, description="", icon="inbox", action_url="", action_text="") %}
+<div class="flex flex-col items-center justify-center py-12 text-center">
+    <div class="rounded-full bg-muted p-4 mb-4">
+        {% if icon == "inbox" %}
+        <svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        {% endif %}
+    </div>
+    <h3 class="text-lg font-semibold text-foreground">{{ title }}</h3>
+    {% if description %}
+    <p class="mt-2 text-sm text-muted-foreground max-w-sm">{{ description }}</p>
+    {% endif %}
+    {% if action_url %}
+    <a href="{{ action_url }}"
+        class="mt-4 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 py-2 text-sm font-medium hover:bg-primary/90">
+        {{ action_text }}
+    </a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{# Skeleton loader #}
+{% macro skeleton(class="h-4 w-full") %}
+<div class="animate-pulse rounded-md bg-muted {{ class }}"></div>
+{% endmacro %}

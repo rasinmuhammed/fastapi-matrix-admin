@@ -1,0 +1,12 @@
+include LICENSE.md
+include README.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include SECURITY.md
+include pyproject.toml
+
+recursive-include fastapi_shadcn_admin/templates *.html
+recursive-include fastapi_shadcn_admin/static *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store

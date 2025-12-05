@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title }} - Admin{% endblock %}</title>
+
+    <!-- Tailwind CSS via CDN (Zero Node.js) -->
+    <script src="https://cdn.tailwindcss.com" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        border: 'hsl(240 3.7% 15.9%)',
+                        input: 'hsl(240 3.7% 15.9%)',
+                        ring: 'hsl(240 4.9% 83.9%)',
+                        background: 'hsl(240 10% 3.9%)',
+                        foreground: 'hsl(0 0% 98%)',
+                        primary: {
+                            DEFAULT: 'hsl(0 0% 98%)',
+                            foreground: 'hsl(240 5.9% 10%)',
+                        },
+                        secondary: {
+                            DEFAULT: 'hsl(240 3.7% 15.9%)',
+                            foreground: 'hsl(0 0% 98%)',
+                        },
+                        destructive: {
+                            DEFAULT: 'hsl(0 62.8% 30.6%)',
+                            foreground: 'hsl(0 0% 98%)',
+                        },
+                        muted: {
+                            DEFAULT: 'hsl(240 3.7% 15.9%)',
+                            foreground: 'hsl(240 5% 64.9%)',
+                        },
+                        accent: {
+                            DEFAULT: 'hsl(240 3.7% 15.9%)',
+                            foreground: 'hsl(0 0% 98%)',
+                        },
+                        popover: {
+                            DEFAULT: 'hsl(240 10% 3.9%)',
+                            foreground: 'hsl(0 0% 98%)',
+                        },
+                        card: {
+                            DEFAULT: 'hsl(240 10% 3.9%)',
+                            foreground: 'hsl(0 0% 98%)',
+                        },
+                    },
+                    borderRadius: {
+                        lg: '0.5rem',
+                        md: 'calc(0.5rem - 2px)',
+                        sm: 'calc(0.5rem - 4px)',
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Styles -->
+    <style nonce="{{ csp_nonce }}">
+        /* Shadcn-like focus rings */
+        .ring-offset-background {
+            --tw-ring-offset-color: hsl(240 10% 3.9%);
+        }
+
+        /* Smooth transitions */
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: hsl(240 10% 3.9%);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: hsl(240 3.7% 15.9%);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: hsl(240 5% 25%);
+        }
+
+        /* HTMX loading indicator */
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="min-h-screen bg-background font-sans antialiased">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 border-r border-border bg-background hidden md:block">
+            <div class="flex h-16 items-center border-b border-border px-6">
+                <a href="{{ url_for('admin:index') }}" class="flex items-center space-x-2">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span class="font-semibold text-foreground">{{ admin_title }}</span>
+                </a>
+            </div>
+            <nav class="space-y-1 p-4">
+                {% if models %}
+                {% for model_name in models %}
+                <a href="{{ url_for('admin:list', model=model_name) }}"
+                    class="flex items-center space-x-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground {% if current_model == model_name %}bg-accent text-accent-foreground{% endif %}">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                    <span>{{ model_name }}</span>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="px-3 py-2 text-sm text-muted-foreground">
+                    No models registered
+                </div>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto">
+            <!-- Top Bar -->
+            <header
+                class="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div class="flex h-16 items-center justify-between px-6">
+                    <div class="flex items-center space-x-4">
+                        <!-- Mobile menu button -->
+                        <button
+                            class="md:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            x-data @click="$dispatch('toggle-sidebar')">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+
+                        {% block breadcrumb %}{% endblock %}
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <!-- Loading indicator -->
+                        <div class="htmx-indicator">
+                            <svg class="h-5 w-5 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4" />
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="p-6">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- HTMX (vendored) -->
+    <script src="{{ url_for('admin:static', path='htmx.min.js') }}" nonce="{{ csp_nonce }}"></script>
+
+    <!-- Alpine.js (vendored) -->
+    <script src="{{ url_for('admin:static', path='alpine.min.js') }}" defer nonce="{{ csp_nonce }}"></script>
+
+    <!-- HTMX configuration -->
+    <script nonce="{{ csp_nonce }}">
+        document.body.addEventListener('htmx:configRequest', function (evt) {
+            // Add CSRF token to all requests if available
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+                evt.detail.headers['X-CSRF-Token'] = csrfToken.content;
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', function (evt) {
+            console.error('HTMX Error:', evt.detail);
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
