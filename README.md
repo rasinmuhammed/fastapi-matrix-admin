@@ -11,9 +11,18 @@
 
 **Zero Node.js** • **Pydantic v2** • **Full Async** • **Military-Grade Security**
 
-## 🎯 Try the Demo
+## 🎯 Live Demo
 
-**Local Demo** (Recommended - Works perfectly!):
+**[👉 Try the Live Demo →](https://fastapi-shadcn-admin.onrender.com/admin/)**
+
+Experience the Matrix-themed UI with real auto-discovered models:
+- ✨ Matrix green/black aesthetic with terminal-style design
+- 🔍 4 auto-discovered models (BlogPost, Product, Author, Category)
+- 📝 Full CRUD operations with smooth animations
+- 🎨 Premium UI with glassmorphism and micro-interactions
+- ⚡ Pre-seeded demo data
+
+**Run Locally:**
 ```bash
 git clone https://github.com/rasinmuhammed/fastapi-shadcn-admin.git
 cd fastapi-shadcn-admin/demo
@@ -21,18 +30,6 @@ pip install -r requirements.txt
 python app.py
 # Visit http://localhost:8000/admin
 ```
-
-**Features you'll see:**
-- ✨ Matrix green/black aesthetic with terminal-style design
-- 🔍 Auto-discovery of 4 models (BlogPost, Product, Author, Category)
-- 📝 Full CRUD operations with smooth animations
-- 🎨 Premium UI with glassmorphism and micro-interactions
-- ⚡ Pre-seeded demo data for instant testing
-
-**Deploy Your Own** (Optional - Free tiers available):
-- [Render.com](https://render.com) - Use `Procfile` for deployment
-- [Fly.io](https://fly.io) - FastAPI-friendly platform
-- Or self-host on any VPS with Docker
 
 ---
 
