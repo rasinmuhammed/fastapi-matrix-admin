@@ -13,7 +13,7 @@
 
 ## 🎯 Try the Demo
 
-**Local Demo** (Works immediately):
+**Local Demo** (Recommended - Works perfectly!):
 ```bash
 git clone https://github.com/rasinmuhammed/fastapi-shadcn-admin.git
 cd fastapi-shadcn-admin/demo
@@ -22,13 +22,17 @@ python app.py
 # Visit http://localhost:8000/admin
 ```
 
-**Live Demo:** Coming soon! (Deploying to Railway)
-
-Experience the Matrix-themed UI with auto-discovered models:
+**Features you'll see:**
 - ✨ Matrix green/black aesthetic with terminal-style design
 - 🔍 Auto-discovery of 4 models (BlogPost, Product, Author, Category)
-- 📝 Full CRUD operations
-- 🎨 Smooth animations and micro-interactions
+- 📝 Full CRUD operations with smooth animations
+- 🎨 Premium UI with glassmorphism and micro-interactions
+- ⚡ Pre-seeded demo data for instant testing
+
+**Deploy Your Own** (Optional - Free tiers available):
+- [Render.com](https://render.com) - Use `Procfile` for deployment
+- [Fly.io](https://fly.io) - FastAPI-friendly platform
+- Or self-host on any VPS with Docker
 
 ---
 
