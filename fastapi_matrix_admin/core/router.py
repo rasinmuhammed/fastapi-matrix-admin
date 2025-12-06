@@ -18,13 +18,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.status import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 
 if TYPE_CHECKING:
-    from fastapi_shadcn_admin.core.registry import AdminRegistry
-    from fastapi_shadcn_admin.core.security import URLSigner
-    from fastapi_shadcn_admin.core.integrator import SchemaWalker
+    from fastapi_matrix_admin.core.registry import AdminRegistry
+    from fastapi_matrix_admin.core.security import URLSigner
+    from fastapi_matrix_admin.core.integrator import SchemaWalker
     from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi_shadcn_admin.core.crud import CRUDBase
-from fastapi_shadcn_admin.core.integrator import FieldDefinition, FieldType
+from fastapi_matrix_admin.core.crud import CRUDBase
+from fastapi_matrix_admin.core.integrator import FieldDefinition, FieldType
 
 
 def extract_sqlalchemy_fields(

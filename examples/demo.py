@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi_shadcn_admin import ShadcnAdmin
+from fastapi_matrix_admin import MatrixAdmin
 
 
 # --- Define Example Models ---
@@ -75,7 +75,7 @@ app = FastAPI(
 
 # --- Initialize Admin ---
 
-admin = ShadcnAdmin(
+admin = MatrixAdmin(
     app,
     secret_key="your-super-secret-key-change-this",  # Must be 16+ chars
     title="Demo Admin",

@@ -18,9 +18,9 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi_shadcn_admin import ShadcnAdmin
-from fastapi_shadcn_admin.core.security import URLSigner, SignatureError
-from fastapi_shadcn_admin.core.registry import (
+from fastapi_matrix_admin import MatrixAdmin
+from fastapi_matrix_admin.core.security import URLSigner, SignatureError
+from fastapi_matrix_admin.core.registry import (
     AdminRegistry, 
     ModelNotFoundError, 
     SubtypeNotAllowedError
@@ -181,7 +181,7 @@ class TestAdminIntegration:
     def app(self):
         """Create test FastAPI app with admin."""
         app = FastAPI()
-        admin = ShadcnAdmin(
+        admin = MatrixAdmin(
             app,
             secret_key="test-secret-key-for-testing",
             title="Test Admin",

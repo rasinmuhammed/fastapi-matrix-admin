@@ -13,8 +13,8 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
-    from fastapi_shadcn_admin.auth.models import AdminUser, SessionData
-    from fastapi_shadcn_admin.core.security import URLSigner
+    from fastapi_matrix_admin.auth.models import AdminUser, SessionData
+    from fastapi_matrix_admin.core.security import URLSigner
 
 
 SESSION_COOKIE_NAME = "admin_session"
@@ -95,7 +95,7 @@ class AuthService:
             user: Authenticated admin user
             remember_me: Whether to create long-lived session
         """
-        from fastapi_shadcn_admin.auth.models import SessionData
+        from fastapi_matrix_admin.auth.models import SessionData
 
         # Create session data
         session_data = SessionData.create(user, remember_me=remember_me)
@@ -127,7 +127,7 @@ class AuthService:
         Returns:
             SessionData if valid session exists, None otherwise
         """
-        from fastapi_shadcn_admin.auth.models import SessionData
+        from fastapi_matrix_admin.auth.models import SessionData
 
         token = request.cookies.get(SESSION_COOKIE_NAME)
         if not token:

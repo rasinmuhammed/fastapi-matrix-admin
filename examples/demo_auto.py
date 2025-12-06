@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi_shadcn_admin import ShadcnAdmin
+from fastapi_matrix_admin import MatrixAdmin
 
 
 # --- SQLAlchemy Base ---
@@ -101,7 +101,7 @@ engine = create_async_engine(DATABASE_URL, echo=True)
 # --- THE MAGIC! ---
 # Just 3 lines to get a full admin panel with all models!
 
-admin = ShadcnAdmin(
+admin = MatrixAdmin(
     app,
     engine=engine,
     secret_key="demo-secret-key-minimum-16-chars",

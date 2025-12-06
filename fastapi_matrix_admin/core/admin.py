@@ -36,12 +36,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from fastapi_shadcn_admin.core.registry import AdminRegistry, ModelConfig
-from fastapi_shadcn_admin.core.security import URLSigner, CSPMiddleware
-from fastapi_shadcn_admin.core.integrator import SchemaWalker
-from fastapi_shadcn_admin.core.router import create_admin_router
-from fastapi_shadcn_admin.core.database import DatabaseManager
-from fastapi_shadcn_admin.core.discovery import AutoDiscovery
+from fastapi_matrix_admin.core.registry import AdminRegistry, ModelConfig
+from fastapi_matrix_admin.core.security import URLSigner, CSPMiddleware
+from fastapi_matrix_admin.core.integrator import SchemaWalker
+from fastapi_matrix_admin.core.router import create_admin_router
+from fastapi_matrix_admin.core.database import DatabaseManager
+from fastapi_matrix_admin.core.discovery import AutoDiscovery
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import DeclarativeBase
@@ -53,23 +53,23 @@ logger = logging.getLogger(__name__)
 
 
 # Public API
-__all__ = ["ShadcnAdmin"]
+__all__ = ["MatrixAdmin"]
 # Package paths
 PACKAGE_DIR = Path(__file__).parent.parent
 TEMPLATES_DIR = PACKAGE_DIR / "templates"
 STATICS_DIR = PACKAGE_DIR / "statics"
 
 
-class ShadcnAdmin:
+class MatrixAdmin:
     """
     The main admin interface class for FastAPI.
 
     Usage:
         from fastapi import FastAPI
-        from fastapi_shadcn_admin import ShadcnAdmin
+        from fastapi_matrix_admin import MatrixAdmin
 
         app = FastAPI()
-        admin = ShadcnAdmin(app, secret_key="your-32-char-secret-key")
+        admin = MatrixAdmin(app, secret_key="your-32-char-secret-key")
 
         # Register your models
         admin.register(User)
@@ -250,7 +250,7 @@ class ShadcnAdmin:
         """
         if not self.db_manager:
             raise RuntimeError(
-                "Database engine not configured. Pass engine parameter to ShadcnAdmin."
+                "Database engine not configured. Pass engine parameter to MatrixAdmin."
             )
 
         if self._session_dependency is None:

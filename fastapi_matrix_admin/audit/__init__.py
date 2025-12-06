@@ -1,6 +1,6 @@
 """Audit logging package for FastAPI Shadcn Admin."""
 
-from fastapi_shadcn_admin.audit.models import (
+from fastapi_matrix_admin.audit.models import (
     AuditLog,
     AuditAction,
     AuditLogger,

@@ -1,6 +1,6 @@
 """Authentication package for FastAPI Shadcn Admin."""
 
-from fastapi_shadcn_admin.auth.models import (
+from fastapi_matrix_admin.auth.models import (
     AdminUser,
     LoginRequest,
     UserResponse,

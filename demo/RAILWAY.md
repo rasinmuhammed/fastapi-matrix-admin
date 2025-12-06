@@ -1,8 +1,8 @@
-# Railway Deployment - FastAPI Shadcn Admin Demo
+# Railway Deployment - FastAPI Matrix Admin Demo
 
 ## Quick Deploy to Railway
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/rasinmuhammed/fastapi-shadcn-admin)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/rasinmuhammed/fastapi-matrix-admin)
 
 ### Manual Deployment
 

@@ -1,4 +1,4 @@
-# FastAPI Shadcn Admin - Launch Checklist
+# FastAPI Matrix Admin - Launch Checklist
 
 ## 🚀 Pre-Launch Checklist
 
@@ -49,7 +49,7 @@ twine check dist/*
 twine upload --repository testpypi dist/*
 
 # Test installation
-pip install --index-url https://test.pypi.org/simple/ fastapi-shadcn-admin
+pip install --index-url https://test.pypi.org/simple/ fastapi-matrix-admin
 ```
 
 **Publish to PyPI:**
@@ -58,7 +58,7 @@ pip install --index-url https://test.pypi.org/simple/ fastapi-shadcn-admin
 twine upload dist/*
 
 # Verify
-pip install fastapi-shadcn-admin
+pip install fastapi-matrix-admin
 ```
 
 ### 🐙 GitHub Release

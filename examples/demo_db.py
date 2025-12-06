@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi_shadcn_admin import ShadcnAdmin
+from fastapi_matrix_admin import MatrixAdmin
 
 
 # --- SQLAlchemy Base ---
@@ -114,7 +114,7 @@ engine = create_async_engine(
 
 # --- Initialize Admin with Database ---
 
-admin = ShadcnAdmin(
+admin = MatrixAdmin(
     app,
     engine=engine,  # NEW: Pass database engine
     secret_key="production-secret-key-change-this-min-16-chars",

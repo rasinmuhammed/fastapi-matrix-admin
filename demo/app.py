@@ -8,7 +8,7 @@ from sqlalchemy import String, Integer, Boolean, Text, Float
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from fastapi_shadcn_admin import ShadcnAdmin
+from fastapi_matrix_admin import MatrixAdmin
 
 # SQLAlchemy Base
 class Base(DeclarativeBase):
@@ -230,7 +230,7 @@ async def root():
 
 
 # Initialize admin
-admin = ShadcnAdmin(
+admin = MatrixAdmin(
     app,
     engine=engine,
     secret_key="demo-live-key-for-render-deployment",

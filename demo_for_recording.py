@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import datetime
 
-from fastapi_shadcn_admin import ShadcnAdmin
+from fastapi_matrix_admin import MatrixAdmin
 
 # Models
 class Base(DeclarativeBase):
@@ -48,7 +48,7 @@ app = FastAPI(title="Demo App")
 engine = create_async_engine("sqlite+aiosqlite:///./demo.db", echo=False)
 
 # Initialize admin with auto-discovery
-admin = ShadcnAdmin(
+admin = MatrixAdmin(
     app, 
     engine=engine, 
     secret_key="demo-secret-key-for-recording-only",

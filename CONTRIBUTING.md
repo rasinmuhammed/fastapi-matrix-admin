@@ -1,6 +1,6 @@
-# Contributing to FastAPI Shadcn Admin
+# Contributing to FastAPI Matrix Admin
 
-Thank you for considering contributing to FastAPI Shadcn Admin! 🎉
+Thank you for considering contributing to FastAPI Matrix Admin! 🎉
 
 ## Code of Conduct
 
@@ -11,7 +11,7 @@ Be respectful, inclusive, and constructive. We're here to build something awesom
 ### Reporting Bugs
 
 **Before submitting:**
-- Check if the bug is already reported in [Issues](https://github.com/rasinmuhammed/fastapi-shadcn-admin/issues)
+- Check if the bug is already reported in [Issues](https://github.com/rasinmuhammed/fastapi-matrix-admin/issues)
 - Try the latest version to see if it's already fixed
 
 **When reporting:**
@@ -22,7 +22,7 @@ Be respectful, inclusive, and constructive. We're here to build something awesom
 - FastAPI Shadow Admin version: (e.g., 0.1.0)
 
 **Steps to Reproduce:**
-1. Install with `pip install fastapi-shadcn-admin`
+1. Install with `pip install fastapi-matrix-admin`
 2. Create this model: ...
 3. Register with: ...
 4. Error occurs when: ...
@@ -58,8 +58,8 @@ We love new ideas! Open an issue with:
 
 **1. Fork & Clone**
 ```bash
-git clone https://github.com/rasinmuhammed/fastapi-shadcn-admin.git
-cd fastapi-shadcn-admin
+git clone https://github.com/rasinmuhammed/fastapi-matrix-admin.git
+cd fastapi-matrix-admin
 ```
 
 **2. Set Up Environment**
@@ -272,7 +272,7 @@ def my_feature(param: str, option: bool = False) -> dict:
 ### High Priority
 - 🧪 **Test Coverage**: Get to 100% from current 90%
 - 📖 **Documentation**: API reference, tutorials, guides
-- 🐛 **Bug Fixes**: Check [Issues](https://github.com/rasinmuhammed/fastapi-shadcn-admin/issues)
+- 🐛 **Bug Fixes**: Check [Issues](https://github.com/rasinmuhammed/fastapi-matrix-admin/issues)
 
 ### Features
 - ✨ **Inline Editing**: Edit fields directly in list view

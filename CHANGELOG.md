@@ -73,6 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed**: Bug fixes
 - **Security**: Security improvements
 
-[Unreleased]: https://github.com/rasinmuhammed/fastapi-shadcn-admin/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/rasinmuhammed/fastapi-shadcn-admin/releases/tag/v0.1.0
-[0.0.1]: https://github.com/rasinmuhammed/fastapi-shadcn-admin/releases/tag/v0.0.1
+[Unreleased]: https://github.com/rasinmuhammed/fastapi-matrix-admin/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/rasinmuhammed/fastapi-matrix-admin/releases/tag/v0.1.0
+[0.0.1]: https://github.com/rasinmuhammed/fastapi-matrix-admin/releases/tag/v0.0.1

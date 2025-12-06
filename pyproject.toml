@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fastapi-shadcn-admin"
-version = "0.2.0"
-description = "Zero-Node.js, Pydantic-First Admin Interface for FastAPI with Shadcn-inspired UI"
+name = "fastapi-matrix-admin"
+version = "1.0.0"
+description = "⚡ FastAPI Admin Panel with Stunning Matrix UI Theme - Terminal-Style, Cyberpunk Aesthetics"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    { name = "fastapi-shadcn-admin contributors" }
+    { name = "fastapi-matrix-admin contributors" }
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Typing :: Typed",
 ]
-keywords = ["fastapi", "admin", "pydantic", "htmx", "shadcn"]
+keywords = ["fastapi", "admin", "matrix", "terminal", "cyberpunk", "pydantic", "htmx"]
 
 dependencies = [
     "fastapi>=0.100.0",
@@ -50,14 +50,14 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rasinmuhammed/fastapi-shadcn-admin"
-Documentation = "https://github.com/rasinmuhammed/fastapi-shadcn-admin#readme"
-Repository = "https://github.com/rasinmuhammed/fastapi-shadcn-admin"
-"Bug Tracker" = "https://github.com/rasinmuhammed/fastapi-shadcn-admin/issues"
-Changelog = "https://github.com/rasinmuhammed/fastapi-shadcn-admin/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/rasinmuhammed/fastapi-matrix-admin"
+Documentation = "https://github.com/rasinmuhammed/fastapi-matrix-admin#readme"
+Repository = "https://github.com/rasinmuhammed/fastapi-matrix-admin"
+"Bug Tracker" = "https://github.com/rasinmuhammed/fastapi-matrix-admin/issues"
+Changelog = "https://github.com/rasinmuhammed/fastapi-matrix-admin/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["fastapi_shadcn_admin"]
+packages = ["fastapi_matrix_admin"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

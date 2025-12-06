@@ -26,7 +26,7 @@ class AdminUser(DeclarativeBase):
     This model MUST be used if you want built-in authentication.
 
     Usage:
-        from fastapi_shadcn_admin.auth.models import AdminUser
+        from fastapi_matrix_admin.auth.models import AdminUser
         from sqlalchemy.orm import declarative_base
 
         Base = declarative_base()
