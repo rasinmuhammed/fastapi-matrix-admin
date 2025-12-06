@@ -1,10 +1,8 @@
-"""
-Bare minimum Vercel Python function - no dependencies
-"""
+from http.server import BaseHTTPRequestHandler
 
-def handler(request, response):
-    """Vercel Python runtime handler"""
-    html = """<!DOCTYPE html>
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        html = """<!DOCTYPE html>
 <html>
 <head>
     <title>FastAPI Shadcn Admin Demo</title>
@@ -58,10 +56,10 @@ def handler(request, response):
         </div>
         
         <div style="margin: 1.5rem 0; text-align: left; max-width: 300px; margin-left: auto; margin-right: auto;">
-            <div class="card" style="display: block; margin: 0.5rem 0;">📝 BlogPost</div>
-            <div class="card" style="display: block; margin: 0.5rem 0;">📦 Product</div>
-            <div class="card" style="display: block; margin: 0.5rem 0;">👤 Author</div>
-            <div class="card" style="display: block; margin: 0.5rem 0;">🏷️ Category</div>
+            <div class="card" style="display: block; margin: 0.5rem 0;">📝 BlogPost - Auto-discovered</div>
+            <div class="card" style="display: block; margin: 0.5rem 0;">📦 Product - Auto-discovered</div>
+            <div class="card" style="display: block; margin: 0.5rem 0;">👤 Author - Auto-discovered</div>
+            <div class="card" style="display: block; margin: 0.5rem 0;">🏷️ Category - Auto-discovered</div>
         </div>
         
         <a href="https://github.com/rasinmuhammed/fastapi-shadcn-admin" class="btn">⭐ GitHub</a>
@@ -71,8 +69,8 @@ def handler(request, response):
     </div>
 </body>
 </html>"""
-    
-    response.status_code = 200
-    response.headers['Content-Type'] = 'text/html'
-    response.body = html
-    return response
+        
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(html.encode())
