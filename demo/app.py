@@ -62,6 +62,14 @@ class Category(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+# Create async SQLite engine
+engine = create_async_engine(
+    "sqlite+aiosqlite:///./demo.db",
+    echo=False,
+    connect_args={"check_same_thread": False}
+)
+
+
 # Lifespan context for startup/shutdown (serverless compatible)
 from contextlib import asynccontextmanager
 
@@ -219,3 +227,16 @@ app = FastAPI(
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="/admin")
+
+
+# Initialize admin with read-only mode for public demo
+admin = ShadcnAdmin(
+    app,
+    engine=engine,
+    secret_key="demo-live-key-for-vercel-deployment",
+    title="FastAPI Shadcn Admin Demo",
+    readonly=True  # Read-only mode: visitors can browse but not modify data
+)
+
+# 🎯 Auto-discover ALL models with ONE LINE!
+admin.auto_discover(Base)
