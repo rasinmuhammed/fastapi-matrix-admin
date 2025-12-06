@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ["python311"]
+nixPkgs = ["python311", "python311Packages.pip", "python311Packages.virtualenv"]
 
 [phases.install]
-cmds = ["pip install -r demo/requirements.txt"]
+cmds = [
+  "python -m venv /opt/venv",
+  ". /opt/venv/bin/activate && pip install -r demo/requirements.txt"
+]
 
 [start]
-cmd = "cd demo && uvicorn app:app --host 0.0.0.0 --port $PORT"
+cmd = ". /opt/venv/bin/activate && cd demo && uvicorn app:app --host 0.0.0.0 --port $PORT"
