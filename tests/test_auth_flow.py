@@ -32,6 +32,8 @@ async def test_rate_limiter():
 
 async def test_argon2_hashing():
     print("🔐 Testing Argon2 Hashing...")
+    from fastapi_matrix_admin.auth.models import pwd_context
+
     password = "secret-matrix-admin"
 
     # Hash
@@ -43,15 +45,12 @@ async def test_argon2_hashing():
     assert hashed != password
     assert "argon2" in hashed or "$" in hashed
 
-    # Verify
-    # Instantiate user with the hash we just generated
-    user = AdminUserMixin(password_hash=hashed)
-    valid = user.verify_password(password)
-
+    # Verify using pwd_context directly
+    valid = pwd_context.verify(password, hashed)
     print(f"Password Verify: {'Valid' if valid else 'Invalid'} (Expected: Valid)")
     assert valid is True
 
-    invalid = user.verify_password("wrong-password")
+    invalid = pwd_context.verify("wrong-password", hashed)
     print(f"Wrong Password: {'Valid' if invalid else 'Invalid'} (Expected: Invalid)")
     assert invalid is False
     print("✅ Argon2 Hashing Passed\n")
