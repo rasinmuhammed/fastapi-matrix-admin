@@ -102,7 +102,14 @@ engine = create_async_engine(
 # Lifespan context for startup/shutdown (serverless compatible)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Force fresh database on startup (for demo purposes)
+    import os
+    db_path = "./demo.db"
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        print("🗑️ Deleted old demo.db for fresh seed")
+
+    # Startup - Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
