@@ -10,11 +10,10 @@ from fastapi_matrix_admin.auth.models import (
 )
 
 __all__ = [
-    "AdminUser",
-    "LoginRequest",
-    "UserResponse",
+    "AdminUserMixin",
     "CreateUserRequest",
     "Permission",
     "PermissionChecker",
     "SessionData",
+    "pwd_context",
 ]

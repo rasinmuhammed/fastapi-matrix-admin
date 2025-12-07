@@ -10,7 +10,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 from sqlalchemy import String, Boolean, Integer, DateTime, JSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 from pydantic import BaseModel, ConfigDict, EmailStr
 from passlib.context import CryptContext
 
@@ -140,7 +140,7 @@ class PermissionChecker:
             raise HTTPException(403)
     """
 
-    def __init__(self, user: Optional[AdminUser], model_permissions: dict):
+    def __init__(self, user: Optional["AdminUserMixin"], model_permissions: dict):
         """
         Initialize permission checker.
 
@@ -204,7 +204,7 @@ class SessionData(BaseModel):
     @classmethod
     def create(
         cls,
-        user: AdminUser,
+        user: "AdminUserMixin",
         remember_me: bool = False,
     ) -> "SessionData":
         """Create session data from user."""
