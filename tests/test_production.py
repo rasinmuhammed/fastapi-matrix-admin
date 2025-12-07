@@ -39,7 +39,7 @@ class TestUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
-class TestAdminUser(AdminUser, Base):
+class TestAdminUser(AdminUserMixin, Base):
     """Test admin user."""
 
     __tablename__ = "test_admin_users"

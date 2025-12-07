@@ -36,7 +36,7 @@ async def test_argon2_hashing():
 
     # Hash
     start = time.time()
-    hashed = AdminUser.hash_password(password)
+    hashed = AdminUserMixin.hash_password(password)
     duration = time.time() - start
     print(f"Hashing Time: {duration:.4f}s (Should be > 0.05s for security)")
     assert duration > 0.05  # Ensure it's not too fast (weak parameters)
@@ -45,7 +45,7 @@ async def test_argon2_hashing():
 
     # Verify
     # Instantiate user with the hash we just generated
-    user = AdminUser(password_hash=hashed)
+    user = AdminUserMixin(password_hash=hashed)
     valid = user.verify_password(password)
 
     print(f"Password Verify: {'Valid' if valid else 'Invalid'} (Expected: Valid)")
