@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi_matrix_admin import MatrixAdmin
-from fastapi_matrix_admin.auth.models import AdminUser, SessionData
+from fastapi_matrix_admin.auth.models import AdminUserMixin, SessionData
 from fastapi_matrix_admin.audit.models import AuditLog, AuditLogger
 
 

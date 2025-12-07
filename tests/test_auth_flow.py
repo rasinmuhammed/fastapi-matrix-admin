@@ -1,7 +1,7 @@
 import asyncio
 import time
 from fastapi_matrix_admin.core.rate_limiter import RateLimiter
-from fastapi_matrix_admin.auth.models import AdminUser
+from fastapi_matrix_admin.auth.models import AdminUserMixin
 
 
 async def test_rate_limiter():
