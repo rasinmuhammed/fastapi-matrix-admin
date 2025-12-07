@@ -90,17 +90,6 @@ Experience the revolution yourself.
 
 ---
 
-## 🤝 Contributing
-
-We are open source and community driven.
-Check out [CONTRIBUTING.md](CONTRIBUTING.md) to join the revolution.
-
-## 📄 License
-
-MIT. Build something confident.
-
----
-
 ## 🎨 Features
 
 ### Core Features
