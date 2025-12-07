@@ -1,5 +1,6 @@
 {% extends "layouts/base.html" %}
 {% import "components/buttons.html" as buttons %}
+{% import "components/inputs.html" as inputs %}
 
 {% block title %}{{ model_config.name }} List{% endblock %}
 
@@ -26,24 +27,37 @@
                 <p class="text-emerald-300 text-sm font-mono">Manage your {{ model_config.name | lower }} records</p>
             </div>
             {% if not model_config.readonly %}
-            <a href="{{ url_for('admin:create', model=model_config.name) }}"
-                class="group relative overflow-hidden flex items-center space-x-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 hover:bg-emerald-500/20 hover:border-emerald-400/50 transition-all duration-300">
-                <div
-                    class="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity">
-                </div>
-                <svg class="h-5 w-5 text-emerald-400 relative z-10" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span class="font-mono text-sm font-semibold text-emerald-100 relative z-10">CREATE NEW</span>
-            </a>
+            <div class="flex items-center space-x-2">
+                <a href="#"
+                    onclick="window.location.href = '{{ url_for('admin:export_csv', model=model_config.name) }}' + window.location.search; return false;"
+                    class="group relative overflow-hidden flex items-center space-x-2 rounded-lg bg-blue-500/10 border border-blue-500/30 px-4 py-2 hover:bg-blue-500/20 hover:border-blue-400/50 transition-all duration-300">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span class="font-mono text-sm font-semibold text-blue-100">EXPORT</span>
+                </a>
+
+                <a href="{{ url_for('admin:create', model=model_config.name) }}"
+                    class="group relative overflow-hidden flex items-center space-x-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 hover:bg-emerald-500/20 hover:border-emerald-400/50 transition-all duration-300">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    </div>
+                    <svg class="h-5 w-5 text-emerald-400 relative z-10" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span class="font-mono text-sm font-semibold text-emerald-100 relative z-10">CREATE NEW</span>
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>
 
     {# Search Bar - Matrix Style #}
-    {% if model_config.searchable_fields %}
-    <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-4">
+    {% if model_config.searchable_fields or filter_definitions %}
+    <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-4"
+        x-data="{ showFilters: false }">
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-lime-500/5 rounded-full blur-3xl"></div>
         <div class="relative z-10 flex items-center space-x-3">
             <div
@@ -59,6 +73,23 @@
                 hx-get="{{ url_for('admin:list', model=model_config.name) }}"
                 hx-trigger="input changed delay:500ms, search" hx-target="#data-table" hx-swap="innerHTML"
                 hx-indicator=".search-loading" />
+
+            {% if filter_definitions %}
+            <button @click="showFilters = !showFilters"
+                class="h-10 px-4 rounded-lg bg-emerald-950/30 border border-emerald-500/30 flex items-center space-x-2 hover:bg-emerald-900/50 transition-colors">
+                <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="text-xs font-mono font-bold text-emerald-400">FILTERS</span>
+                {% if active_filters %}
+                <span
+                    class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] text-black font-bold">{{
+                    active_filters|length }}</span>
+                {% endif %}
+            </button>
+            {% endif %}
+
             <div class="search-loading htmx-indicator">
                 <div class="flex items-center space-x-2 text-emerald-500 text-xs font-mono">
                     <div class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></div>
@@ -66,6 +97,79 @@
                 </div>
             </div>
         </div>
+
+        {# Filter Sidebar / Drawer #}
+        {% if filter_definitions %}
+        <div x-show="showFilters" style="display: none;">
+            <div class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" @click="showFilters = false"
+                x-transition.opacity></div>
+            <div class="fixed right-0 top-0 z-50 h-full w-80 bg-black border-l border-emerald-500/30 shadow-2xl p-6 overflow-y-auto"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-x-full"
+                x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
+
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-mono font-bold text-emerald-400">ADVANCED FILTERS</h3>
+                    <button @click="showFilters = false" class="text-emerald-700 hover:text-emerald-400">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form method="GET" action="{{ url_for('admin:list', model=model_config.name) }}" class="space-y-6">
+                    {% for field in filter_definitions %}
+                    <div class="space-y-2">
+                        <span class="text-xs font-mono font-bold text-emerald-600 uppercase">{{ field.title }}</span>
+
+                        {% if field.field_type.value == 'relationship' %}
+                        {# Use Smart Select for Filtering #}
+                        {{ inputs.relationship_input(field, active_filters.get(field.name)) }}
+
+                        {% elif field.field_type.value == 'boolean' %}
+                        <select name="{{ field.name }}"
+                            class="w-full h-9 bg-black border border-emerald-900 rounded px-2 text-emerald-400 text-sm focus:border-emerald-500 focus:outline-none">
+                            <option value="">Any</option>
+                            <option value="true" {% if active_filters.get(field.name)=='true' %}selected{% endif %}>Yes
+                            </option>
+                            <option value="false" {% if active_filters.get(field.name)=='false' %}selected{% endif %}>No
+                            </option>
+                        </select>
+
+                        {% elif field.field_type.value == 'datetime' or field.field_type.value == 'date' %}
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" name="{{ field.name }}__gte"
+                                value="{{ active_filters.get(field.name + '__gte', '') }}"
+                                class="w-full h-9 bg-black border border-emerald-900 rounded px-2 text-emerald-400 text-xs placeholder:text-emerald-900 focus:border-emerald-500 focus:outline-none"
+                                placeholder="From">
+                            <input type="date" name="{{ field.name }}__lte"
+                                value="{{ active_filters.get(field.name + '__lte', '') }}"
+                                class="w-full h-9 bg-black border border-emerald-900 rounded px-2 text-emerald-400 text-xs placeholder:text-emerald-900 focus:border-emerald-500 focus:outline-none"
+                                placeholder="To">
+                        </div>
+
+                        {% else %}
+                        {# Default Text Filter (Contains) #}
+                        <input type="text" name="{{ field.name }}__contains"
+                            value="{{ active_filters.get(field.name + '__contains', '') }}"
+                            class="w-full h-9 bg-black border border-emerald-900 rounded px-3 text-emerald-400 text-sm placeholder:text-emerald-900/50 focus:border-emerald-500 focus:outline-none"
+                            placeholder="Contains...">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="pt-4 flex items-center space-x-2">
+                        <button type="submit"
+                            class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-black font-mono font-bold py-2 rounded text-sm transition-colors">APPLY
+                            FILTERS</button>
+                        <a href="{{ url_for('admin:list', model=model_config.name) }}"
+                            class="px-3 py-2 bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 rounded text-sm font-mono border border-emerald-900">RESET</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 

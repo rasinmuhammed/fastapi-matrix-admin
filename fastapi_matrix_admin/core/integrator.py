@@ -39,6 +39,7 @@ class FieldType(str, Enum):
     FILE = "file"
     IMAGE = "image"
     JSON = "json"
+    RELATIONSHIP = "relationship"  # New type for FKs
     UNION = "union"  # For discriminated unions
     NESTED = "nested"  # For nested objects
     LIST = "list"  # For list fields
@@ -68,6 +69,9 @@ class FieldDefinition:
     # For discriminated unions
     discriminator: str | None = None
     discriminator_values: list[str] = field(default_factory=list)
+
+    # For relationship fields (Foreign Keys)
+    target_model: str | None = None
 
     # For nested/list fields
     children: list["FieldDefinition"] = field(default_factory=list)

@@ -139,11 +139,90 @@ class="") %}
         </svg>
         <h4 class="font-medium">There were errors with your submission</h4>
     </div>
-    <ul class="mt-2 list-disc list-inside text-sm">
-        {% for error in errors %}
-        <li>{{ error }}</li>
-        {% endfor %}
     </ul>
 </div>
 {% endif %}
+{% endmacro %}
+
+
+{# Relationship Input (Smart Select) #}
+{% macro relationship_input(field, value=none, error=none) %}
+<div x-data="{
+    query: '',
+    results: [],
+    open: false,
+    selectedLabel: '',
+    value: '{{ value or '' }}',
+    targetModel: '{{ field.target_model }}',
+    
+    async search() {
+        if (this.query.length < 1) { this.results = []; return; }
+        let url = `/admin/api/search/${this.targetModel}?q=` + encodeURIComponent(this.query);
+        try {
+            let res = await fetch(url);
+            if (res.ok) {
+                this.results = await res.json();
+                this.open = true;
+            }
+        } catch (e) {
+            console.error('Search failed', e);
+        }
+    },
+    
+    select(item) {
+        this.value = item.id;
+        this.selectedLabel = item.label;
+        this.query = ''; 
+        this.open = false;
+    },
+    
+    init() {
+        if (this.value) {
+            this.selectedLabel = 'ID: ' + this.value; 
+            // TODO: Fetch label if possible
+        }
+    }
+}" class="relative w-full">
+
+    <label class="block mb-2">
+        <div class="flex items-center justify-between">
+            <span class="text-sm font-mono font-semibold text-emerald-400">
+                {{ field.title }}{% if field.required %}<span class="text-red-400 ml-1">*</span>{% endif %}
+            </span>
+        </div>
+    </label>
+
+    <!-- Hidden Actual Input -->
+    <input type="hidden" name="{{ field.name }}" x-model="value">
+
+    <!-- Search Input -->
+    <div class="relative">
+        <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="open = true"
+            @click.outside="open = false"
+            class="w-full h-10 px-4 rounded-lg bg-black border border-emerald-500/20 text-emerald-100 font-mono text-sm placeholder:text-emerald-900 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            :placeholder="selectedLabel || 'Search {{ field.title }}...'">
+
+        <!-- Clear Button -->
+        <button type="button" x-show="value" @click="value = ''; selectedLabel = ''"
+            class="absolute right-2 top-2 text-red-500 hover:text-red-400 text-xs p-1">
+            CLEAR
+        </button>
+    </div>
+
+    <!-- Dropdown -->
+    <div x-show="open && results.length > 0" x-transition
+        class="absolute z-50 w-full mt-1 bg-black border border-emerald-500/50 rounded shadow-[0_0_15px_rgba(0,255,65,0.2)] max-h-60 overflow-y-auto">
+        <template x-for="item in results" :key="item.id">
+            <div @click="select(item)"
+                class="p-2 cursor-pointer hover:bg-emerald-900/30 hover:text-emerald-400 text-emerald-600 text-sm border-b border-emerald-900/10 font-mono transition-colors">
+                <span x-text="item.label"></span>
+                <span class="text-xs text-emerald-800 float-right" x-text="'#' + item.id"></span>
+            </div>
+        </template>
+    </div>
+
+    {% if error %}
+    <p class="text-xs font-mono text-red-400 mt-1">{{ error }}</p>
+    {% endif %}
+</div>
 {% endmacro %}

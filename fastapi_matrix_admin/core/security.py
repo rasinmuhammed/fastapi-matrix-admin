@@ -151,8 +151,8 @@ class CSPMiddleware(BaseHTTPMiddleware):
         """Return the default secure CSP policy."""
         return {
             "default-src": "'self'",
-            "script-src": "'self'",  # Nonce will be appended
-            "style-src": "'self' 'unsafe-inline' https://cdn.tailwindcss.com",
+            "script-src": "'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net",  # Nonce will be appended
+            "style-src": "'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com",
             "img-src": "'self' data: https:",
             "font-src": "'self' https://fonts.gstatic.com",
             "connect-src": "'self'",

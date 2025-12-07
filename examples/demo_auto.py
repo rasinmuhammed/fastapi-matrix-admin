@@ -7,7 +7,6 @@ Run: python -m examples.demo_auto
 Visit: http://localhost:8000/admin
 """
 
-from typing import Literal
 from datetime import datetime
 
 from fastapi import FastAPI
@@ -19,6 +18,7 @@ import uvicorn
 # Import from our library
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi_matrix_admin import MatrixAdmin
@@ -26,30 +26,34 @@ from fastapi_matrix_admin import MatrixAdmin
 
 # --- SQLAlchemy Base ---
 
+
 class Base(DeclarativeBase):
     pass
 
 
 # --- Models (Just Define Them!) ---
 
+
 class User(Base):
     """User model - will be auto-discovered!"""
+
     __tablename__ = "users"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True)
     email: Mapped[str] = mapped_column(String(100), unique=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    
+
     # Relationship
     articles = relationship("Article", back_populates="author")
 
 
 class Category(Base):
     """Category model - will be auto-discovered!"""
+
     __tablename__ = "categories"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(Text, nullable=True)
@@ -58,26 +62,32 @@ class Category(Base):
 
 class Article(Base):
     """Article model - will be auto-discovered!"""
+
     __tablename__ = "articles"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="draft")  # draft, published
     author_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
-    category_id: Mapped[int] = mapped_column(Integer, ForeignKey("categories.id"), nullable=True)
+    category_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("categories.id"), nullable=True
+    )
     published_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
     # Relationships
     author = relationship("User", back_populates="articles")
 
 
 class Comment(Base):
     """Comment model - will be auto-discovered!"""
+
     __tablename__ = "comments"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     article_id: Mapped[int] = mapped_column(Integer, ForeignKey("articles.id"))
     author_name: Mapped[str] = mapped_column(String(100))
@@ -117,12 +127,13 @@ print(f"✨ Auto-discovered and registered {models_registered} models!")
 
 # --- Setup/Teardown ---
 
+
 @app.on_event("startup")
 async def startup():
     """Create tables and add sample data."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     print("=" * 60)
     print("✅ Database tables created")
     print("✨ Models auto-discovered:")
@@ -158,7 +169,7 @@ async def root():
             "Inferred sensible ordering",
             "Assigned icons based on model names",
         ],
-        "try_it": "Visit /admin to see the magic!"
+        "try_it": "Visit /admin to see the magic!",
     }
 
 

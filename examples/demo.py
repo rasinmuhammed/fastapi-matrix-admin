@@ -14,6 +14,7 @@ import uvicorn
 # Import from our library
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi_matrix_admin import MatrixAdmin
@@ -21,8 +22,10 @@ from fastapi_matrix_admin import MatrixAdmin
 
 # --- Define Example Models ---
 
+
 class User(BaseModel):
     """User model for demonstration."""
+
     id: int
     name: str
     email: str
@@ -31,6 +34,7 @@ class User(BaseModel):
 
 class TextBlock(BaseModel):
     """Text content block."""
+
     type: Literal["text"] = "text"
     content: str
     font_size: int = 16
@@ -38,6 +42,7 @@ class TextBlock(BaseModel):
 
 class ImageBlock(BaseModel):
     """Image content block."""
+
     type: Literal["image"] = "image"
     url: str
     alt_text: str
@@ -47,6 +52,7 @@ class ImageBlock(BaseModel):
 
 class VideoBlock(BaseModel):
     """Video content block."""
+
     type: Literal["video"] = "video"
     url: str
     duration: int
@@ -59,6 +65,7 @@ ContentBlock = Union[TextBlock, ImageBlock, VideoBlock]
 
 class Article(BaseModel):
     """Article with polymorphic content blocks."""
+
     id: int
     title: str
     content: ContentBlock = Field(discriminator="type")
@@ -98,6 +105,7 @@ admin.register(
 
 
 # --- Regular API Routes ---
+
 
 @app.get("/")
 async def root():

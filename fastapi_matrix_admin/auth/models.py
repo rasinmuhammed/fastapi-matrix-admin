@@ -8,34 +8,28 @@ from __future__ import annotations
 
 from typing import Optional, List
 from datetime import datetime, timedelta
-import secrets
-import hashlib
 
 from sqlalchemy import String, Boolean, Integer, DateTime, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from pydantic import BaseModel, ConfigDict, EmailStr
+from passlib.context import CryptContext
+
+# Password context using Argon2 (winner of Password Hashing Competition)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 # --- SQLAlchemy Models ---
 
 
-class AdminUser(DeclarativeBase):
+class AdminUserMixin:
     """
-    Admin user model with authentication and RBAC.
-
-    This model MUST be used if you want built-in authentication.
+    Admin user mixin with authentication and RBAC.
 
     Usage:
-        from fastapi_matrix_admin.auth.models import AdminUser
-        from sqlalchemy.orm import declarative_base
-
-        Base = declarative_base()
-
-        class User(AdminUser, Base):
+        class User(AdminUserMixin, Base):
             __tablename__ = "admin_users"
     """
 
-    __abstract__ = True
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -48,6 +42,10 @@ class AdminUser(DeclarativeBase):
     )  # ["admin", "editor", "viewer"]
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Security / MFA
+    is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    totp_secret: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Metadata
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -68,19 +66,12 @@ class AdminUser(DeclarativeBase):
 
     @classmethod
     def hash_password(cls, password: str) -> str:
-        """Hash a password using SHA-256 with salt."""
-        salt = secrets.token_hex(32)
-        pwd_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-        return f"{salt}${pwd_hash}"
+        """Hash a password using Argon2."""
+        return pwd_context.hash(password)
 
     def verify_password(self, password: str) -> bool:
-        """Verify a password against the stored hash."""
-        try:
-            salt, pwd_hash = self.password_hash.split("$")
-            check_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-            return check_hash == pwd_hash
-        except (ValueError, AttributeError):
-            return False
+        """Verify a password against the stored Argon2 hash."""
+        return pwd_context.verify(password, self.password_hash)
 
     def update_last_login(self) -> None:
         """Update last login timestamp."""

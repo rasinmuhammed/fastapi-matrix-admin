@@ -2,36 +2,59 @@
 Live Demo for Vercel - FastAPI Shadcn Admin
 Showcases Matrix UI theme and auto_discover feature
 """
+
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from sqlalchemy import String, Integer, Boolean, Text, Float
+from contextlib import asynccontextmanager
+from sqlalchemy import String, Integer, Boolean, Text, Float, ForeignKey, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from fastapi_matrix_admin import MatrixAdmin
+from fastapi_matrix_admin.core.registry import ModelConfig
+
+# Import Auth components
+from fastapi_matrix_admin.auth.models import AdminUserMixin, pwd_context
+
 
 # SQLAlchemy Base
 class Base(DeclarativeBase):
     pass
 
+# Define the Admin User model
+class User(AdminUserMixin, Base):
+    __tablename__ = "users"
+
 
 # Demo Models - Showcase auto_discover
 class BlogPost(Base):
     """Blog posts with title, content, and author"""
+
     __tablename__ = "blog_posts"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
-    author: Mapped[str] = mapped_column(String(100))
+
+    # Relationship Showcase (Smart Select)
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
+    author: Mapped["Author"] = relationship(back_populates="posts")
+
     published: Mapped[bool] = mapped_column(Boolean, default=False)
     views: Mapped[int] = mapped_column(Integer, default=0)
+    
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=True)
+    category: Mapped["Category"] = relationship()
+
+    def __admin_repr__(self):
+        return self.title
 
 
 class Product(Base):
     """E-commerce products"""
+
     __tablename__ = "products"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(150))
     description: Mapped[str] = mapped_column(Text)
@@ -42,20 +65,26 @@ class Product(Base):
 
 class Author(Base):
     """Author profiles"""
+
     __tablename__ = "authors"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(150))
     bio: Mapped[str] = mapped_column(Text)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-    posts_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    posts: Mapped[list["BlogPost"]] = relationship(back_populates="author")
+
+    def __admin_repr__(self):
+        return f"{self.name} ({self.email})"
 
 
 class Category(Base):
     """Content categories"""
+
     __tablename__ = "categories"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(Text)
@@ -66,151 +95,140 @@ class Category(Base):
 engine = create_async_engine(
     "sqlite+aiosqlite:///./demo.db",
     echo=False,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False},
 )
 
 
 # Lifespan context for startup/shutdown (serverless compatible)
-from contextlib import asynccontextmanager
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Seed demo data
-    from sqlalchemy import select, func
-    Session = async_sessionmaker(engine, expire_on_commit=False)
-    async with Session() as session:
-        result = await session.execute(select(func.count()).select_from(BlogPost))
-        count = result.scalar()
-        
-        if count == 0:
-            # Add demo blog posts
-            session.add_all([
-                BlogPost(
-                    title="Getting Started with FastAPI Shadcn Admin",
-                    content="FastAPI Shadcn Admin provides a beautiful, modern admin interface for your FastAPI applications. With auto-discovery, you can have a fully functional admin panel in minutes!",
-                    author="John Doe",
-                    published=True,
-                    views=1250
-                ),
-                BlogPost(
-                    title="Matrix UI Theme - Dark Mode Done Right",
-                    content="Our Matrix-inspired green and black theme isn't just beautiful—it's functional. Terminal-style typography, neon accents, and smooth animations create an immersive experience.",
-                    author="Jane Smith",
-                    published=True,
-                    views=890
-                ),
-                BlogPost(
-                    title="Auto-Discovery: The Magic Behind the Scenes",
-                    content="With just one line of code—admin.auto_discover(Base)—all your SQLAlchemy models become fully-featured admin pages. CRUD operations, search, pagination, all automatic!",
-                    author="Alice Johnson",
-                    published=True,
-                    views=1450
-                ),
-                BlogPost(
-                    title="Draft: Upcoming Features",
-                    content="We're working on advanced features like file uploads, rich text editing, and custom dashboards. Stay tuned!",
-                    author="Bob Wilson",
-                    published=False,
-                    views=45
-                ),
-            ])
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    async with async_session() as session:
+        # Check if users exist (Seed Admin)
+        result = await session.execute(select(User).where(User.username == "admin"))
+        if not result.scalar_one_or_none():
+            admin_user = User(
+                username="admin",
+                email="admin@example.com",
+                password_hash=pwd_context.hash("admin"),
+                roles=["admin"],
+                is_superuser=True,
+                is_active=True,
+            )
+            session.add(admin_user)
+            await session.commit()
+            print("✅ Created default admin user: admin/admin")
+
+        # Check if data exists
+        result = await session.execute(select(BlogPost))
+        if not result.scalars().first():
+            # Create Authors
+            a1 = Author(
+                name="Neo",
+                email="neo@matrix.com",
+                bio="The One.",
+                active=True,
+            )
+            a2 = Author(
+                name="Trinity",
+                email="trinity@matrix.com",
+                bio="Legendary hacker.",
+                active=True,
+            )
+            session.add_all([a1, a2])
+            await session.flush()
             
-            # Add demo products
-            session.add_all([
+            # Create Categories
+            c1 = Category(name="Tech", description="Technology news")
+            c2 = Category(name="Philosophy", description="Deep thoughts")
+            session.add_all([c1, c2])
+            await session.flush()
+
+            # Create Posts
+            p1 = BlogPost(
+                title="Wake Up",
+                content="The Matrix has you...",
+                published=True,
+                views=100,
+                author_id=a1.id,
+                category_id=c1.id,
+            )
+            p2 = BlogPost(
+                title="Follow the White Rabbit",
+                content="Knock, knock, Neo.",
+                published=True,
+                views=50,
+                author_id=a1.id,
+                category_id=c2.id,
+            )
+            session.add_all([p1, p2])
+
+            # Create Products
+            items = [
+                Product(
+                    name="Red Pill",
+                    description="Wake up from the Matrix.",
+                    price=99.99,
+                    stock=100,
+                    available=True
+                ),
+                Product(
+                    name="Blue Pill",
+                    description="Stay in wonderland.",
+                    price=0.00,
+                    stock=1000,
+                    available=True
+                ),
+                Product(
+                    name="Sunglasses",
+                    description="Essential cyberpunk accessory.",
+                    price=150.00,
+                    stock=50,
+                    available=True
+                ),
                 Product(
                     name="Premium Laptop",
-                    description="High-performance laptop with 16GB RAM and 512GB SSD. Perfect for development and design work.",
+                    description="High-performance machine.",
                     price=1299.99,
                     stock=15,
-                    available=True
+                    available=True,
                 ),
                 Product(
                     name="Mechanical Keyboard",
-                    description="Cherry MX Blue switches, RGB backlight, programmable macros. The ultimate developer keyboard.",
+                    description="Clicky keys for coding.",
                     price=159.99,
                     stock=32,
-                    available=True
+                    available=True,
                 ),
-                Product(
-                    name="4K Monitor",
-                    description="27-inch 4K IPS display with 144Hz refresh rate. Stunning colors and smooth performance.",
-                    price=499.99,
-                    stock=8,
-                    available=True
-                ),
-                Product(
-                    name="Wireless Mouse",
-                    description="Ergonomic wireless mouse with customizable buttons and long battery life.",
-                    price=49.99,
-                    stock=0,
-                    available=False
-                ),
-            ])
-            
-            # Add demo authors
-            session.add_all([
-                Author(
-                    name="John Doe",
-                    email="john@example.com",
-                    bio="Full-stack developer with 10 years of experience. Passionate about clean code and modern web technologies.",
-                    active=True,
-                    posts_count=1
-                ),
-                Author(
-                    name="Jane Smith",
-                    email="jane@example.com",
-                    bio="UI/UX designer and frontend developer. Loves creating beautiful, user-friendly interfaces.",
-                    active=True,
-                    posts_count=1
-                ),
-                Author(
-                    name="Alice Johnson",
-                    email="alice@example.com",
-                    bio="Backend architect specializing in Python and FastAPI. Open source contributor.",
-                    active=True,
-                    posts_count=1
-                ),
-                Author(
-                    name="Bob Wilson",
-                    email="bob@example.com",
-                    bio="Technical writer and developer advocate. Making complex tech simple since 2015.",
-                    active=False,
-                    posts_count=1
-                ),
-            ])
-            
+            ]
+            session.add_all(items)
+
             # Add demo categories
-            session.add_all([
-                Category(
-                    name="Technology",
-                    description="Articles about software development, programming languages, and tech trends.",
-                    active=True
-                ),
-                Category(
-                    name="Design",
-                    description="UI/UX design, web design, and visual creativity.",
-                    active=True
-                ),
-                Category(
-                    name="Tutorial",
-                    description="Step-by-step guides and how-to articles.",
-                    active=True
-                ),
-                Category(
-                    name="News",
-                    description="Latest tech news and industry updates.",
-                    active=False
-                ),
-            ])
-            
+            session.add_all(
+                [
+                    Category(
+                        name="Technology",
+                        description="Articles about software development.",
+                        active=True,
+                    ),
+                    Category(
+                        name="Design",
+                        description="UI/UX design.",
+                        active=True,
+                    ),
+                ]
+            )
+
             await session.commit()
-    
+            print("✅ Demo data seeded!")
+
     yield  # App runs here
-    
+
     # Shutdown (cleanup if needed)
     await engine.dispose()
 
@@ -220,8 +238,9 @@ app = FastAPI(
     title="FastAPI Shadcn Admin - Live Demo",
     description="Showcasing Matrix UI and Auto-Discovery",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
+
 
 # Redirect root to admin
 @app.get("/", include_in_schema=False)
@@ -234,16 +253,73 @@ admin = MatrixAdmin(
     app,
     engine=engine,
     secret_key="demo-live-key-for-render-deployment",
-    title="FastAPI Shadcn Admin Demo"
+    title="FastAPI Shadcn Admin Demo",
+    demo_mode=True,
 )
 
-# 🎯 Auto-discover ALL models with ONE LINE!
-admin.auto_discover(Base)
+# 🎯 Explicit Registration to Showcase Features
+
+# 1. Authors: Simple configuration
+admin.register(
+    Author,
+    name="Authors",
+    icon="users",
+    list_display=["name", "email", "active"],
+    searchable_fields=["name", "email"],
+    filter_fields=["active"],
+)
+
+# 2. Blog Posts: Showcase Relationships & Advanced Filters
+admin.register(
+    BlogPost,
+    name="Blog Posts",
+    icon="file-text",
+    list_display=["title", "author", "published", "views"],
+    searchable_fields=["title"],
+    filter_fields=["published", "author"],
+)
+
+# 3. Products: Numeric Filtering
+admin.register(
+    Product,
+    name="Products",
+    icon="shopping-cart",
+    list_display=["name", "price", "stock", "available"],
+    filter_fields=["available", "price"],
+)
+
+# 4. Categories: Auto-discover fallback (or simple reg)
+admin.register(Category, icon="tag")
+
+# 5. Admin Users & Audit Logs (System)
+from fastapi_matrix_admin.audit.models import AuditLog
+
+admin.register(
+    User,
+    name="System Users",
+    icon="shield",
+    list_display=["username", "email", "roles", "is_active", "last_login"],
+    searchable_fields=["username", "email"],
+    filter_fields=["is_active", "roles"],
+    readonly=True, # Protect admin user for now
+)
+
+admin.register(
+    AuditLog,
+    name="Audit Logs",
+    icon="activity",
+    list_display=["action", "model", "record_id", "user_id", "timestamp"],
+    searchable_fields=["model", "action", "record_id"],
+    filter_fields=["action", "model"],
+    ordering=["-timestamp"],
+    readonly=True,
+)
 
 
 # Entry point for Render/local
 if __name__ == "__main__":
     import uvicorn
     import os
+
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)

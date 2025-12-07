@@ -1,5 +1,6 @@
 {% extends "layouts/base.html" %}
 {% import "components/buttons.html" as buttons %}
+{% import "components/inputs.html" as inputs %}
 
 {% block title %}{% if record_id %}EDIT{% else %}CREATE{% endif %} {{ model_config.name }}{% endblock %}
 
@@ -211,6 +212,11 @@
                         <p class="text-xs font-mono text-red-400 mt-1">{{ errors.get(field.name)[0] }}</p>
                         {% endif %}
                     </label>
+
+                    {# Relationship (Smart Select) #}
+                    {% elif field.field_type.value == "relationship" %}
+                    {{ inputs.relationship_input(field, values.get(field.name), errors.get(field.name)[0] if
+                    errors.get(field.name) else None) }}
 
                     {# Fallback for other types #}
                     {% else %}

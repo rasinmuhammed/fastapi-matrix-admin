@@ -11,13 +11,14 @@ from datetime import datetime
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from sqlalchemy import String, Boolean, Integer, DateTime, Text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 import uvicorn
 
 # Import from our library
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi_matrix_admin import MatrixAdmin
@@ -25,16 +26,19 @@ from fastapi_matrix_admin import MatrixAdmin
 
 # --- SQLAlchemy Base ---
 
+
 class Base(DeclarativeBase):
     pass
 
 
 # --- SQLAlchemy Models ---
 
+
 class User(Base):
     """User model with database persistence."""
+
     __tablename__ = "users"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100), unique=True)
@@ -44,8 +48,9 @@ class User(Base):
 
 class Article(Base):
     """Article model for content management."""
+
     __tablename__ = "articles"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
@@ -56,8 +61,10 @@ class Article(Base):
 # --- Pydantic Models for Polymorphic Forms ---
 # These demonstrate the discriminated union feature
 
+
 class TextBlock(BaseModel):
     """Text content block."""
+
     type: Literal["text"] = "text"
     content: str
     font_size: int = 16
@@ -65,6 +72,7 @@ class TextBlock(BaseModel):
 
 class ImageBlock(BaseModel):
     """Image content block."""
+
     type: Literal["image"] = "image"
     url: str
     alt_text: str
@@ -74,6 +82,7 @@ class ImageBlock(BaseModel):
 
 class VideoBlock(BaseModel):
     """Video content block."""
+
     type: Literal["video"] = "video"
     url: str
     duration: int
@@ -86,6 +95,7 @@ ContentBlock = Union[TextBlock, ImageBlock, VideoBlock]
 
 class Content(BaseModel):
     """Content with polymorphic blocks (Pydantic-only, no database)."""
+
     id: int
     title: str
     content_block: ContentBlock = Field(discriminator="type")
@@ -151,6 +161,7 @@ admin.register(
 
 # --- Startup/Shutdown Events ---
 
+
 @app.on_event("startup")
 async def startup():
     """Create database tables on startup."""
@@ -168,6 +179,7 @@ async def shutdown():
 
 
 # --- Regular API Routes ---
+
 
 @app.get("/")
 async def root():

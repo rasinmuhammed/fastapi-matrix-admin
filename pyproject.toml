@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fastapi-matrix-admin"
-version = "1.0.0"
+version = "1.1.0"
 description = "⚡ FastAPI Admin Panel with Stunning Matrix UI Theme - Terminal-Style, Cyberpunk Aesthetics"
 readme = "README.md"
 license = {text = "MIT"}

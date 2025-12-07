@@ -100,8 +100,82 @@
         {% endfor %}
     </div>
 
-    {# Modern Charts Section #}
-    <div class="grid gap-6 lg:grid-cols-2">
+    {# <!-- System Monitor (Observer Module) -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+        <!-- CPU/RAM/Disk Bars -->
+        <div class="rounded-xl bg-black border border-emerald-500/30 p-6 col-span-2">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-mono font-bold text-emerald-400 flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                    SYSTEM INTEGRITY
+                </h3>
+                <span class="text-xs text-emerald-600 font-mono">{{ system_stats.platform }}</span>
+            </div>
+
+            <div class="space-y-4">
+                <!-- CPU -->
+                <div>
+                    <div class="flex justify-between text-xs font-mono text-emerald-500 mb-1">
+                        <span>CPU LOAD</span>
+                        <span>{{ system_stats.cpu_usage }}%</span>
+                    </div>
+                    <div class="h-2 bg-emerald-900/20 rounded-full overflow-hidden border border-emerald-900/30">
+                        <div class="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000"
+                            style="width: {{ system_stats.cpu_usage }}%"></div>
+                    </div>
+                </div>
+
+                <!-- RAM -->
+                <div>
+                    <div class="flex justify-between text-xs font-mono text-emerald-500 mb-1">
+                        <span>MEMORY ({{ system_stats.ram_total }})</span>
+                        <span>{{ system_stats.ram_usage }}%</span>
+                    </div>
+                    <div class="h-2 bg-emerald-900/20 rounded-full overflow-hidden border border-emerald-900/30">
+                        <div class="h-full bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)] transition-all duration-1000"
+                            style="width: {{ system_stats.ram_usage }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Disk -->
+                <div>
+                    <div class="flex justify-between text-xs font-mono text-emerald-500 mb-1">
+                        <span>STORAGE INTEGRITY</span>
+                        <span>{{ system_stats.disk_usage }}%</span>
+                    </div>
+                    <div class="h-2 bg-emerald-900/20 rounded-full overflow-hidden border border-emerald-900/30">
+                        <div class="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000"
+                            style="width: {{ system_stats.disk_usage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uptime / Quick Info -->
+        <div
+            class="rounded-xl bg-black border border-emerald-500/30 p-6 flex flex-col justify-center items-center text-center relative overflow-hidden">
+            <div
+                class="absolute inset-0 bg-[url('https://media.giphy.com/media/dummy/giphy.gif')] opacity-5 pointer-events-none">
+            </div> <!-- Optional Matrix Rain overlay if available -->
+
+            <div class="z-10">
+                <h4 class="text-xs font-mono text-emerald-600 mb-2">SYSTEM BOOT TIME</h4>
+                <div class="text-xl font-mono text-emerald-100 font-bold mb-4">{{ system_stats.boot_time }}</div>
+
+                <div
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono animate-pulse">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
+                    OPERATIONAL
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid gap-6 md:grid-cols-2 mb-6">
         {# Activity Chart #}
         <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-6">
             <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>

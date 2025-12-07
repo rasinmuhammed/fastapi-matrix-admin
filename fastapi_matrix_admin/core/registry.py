@@ -79,6 +79,7 @@ class ModelConfig:
     exclude: list[str] = field(default_factory=list)
     list_display: list[str] = field(default_factory=list)
     searchable_fields: list[str] = field(default_factory=list)
+    filter_fields: list[str] = field(default_factory=list)  # New: Advanced Filters
     ordering: list[str] = field(default_factory=list)
     icon: str = "file"
     readonly: bool = False

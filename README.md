@@ -1,103 +1,103 @@
 # ⚡ FastAPI Matrix Admin
 
-> **Enter the Matrix** - The most striking admin panel for FastAPI. Terminal-style cyberpunk aesthetics meet production-ready functionality.
+<div align="center">
+  <img src="https://raw.githubusercontent.com/rasinmuhammed/fastapi-matrix-admin/main/docs/assets/banner.png" alt="FastAPI Matrix Admin" width="100%">
+  <br>
+  <h3>Enter the Matrix. Your backend never looked this good.</h3>
+</div>
 
-[![PyPI version](https://badge.fury.io/py/fastapi-matrix-admin.svg)](https://badge.fury.io/py/fastapi-matrix-admin)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://github.com/rasinmuhammed/fastapi-matrix-admin/workflows/Tests/badge.svg)](https://github.com/rasinmuhammed/fastapi-matrix-admin/actions/workflows/tests.yml)
-[![Code Quality](https://github.com/rasinmuhammed/fastapi-matrix-admin/workflows/Code%20Quality/badge.svg)](https://github.com/rasinmuhammed/fastapi-matrix-admin/actions/workflows/quality.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-**Zero Node.js** • **Matrix UI Theme** • **Terminal Aesthetics** • **One-Line Auto-Discovery**
-
-## 🎯 Live Demo
-
-**[👉 Try the Live Demo →](https://fastapi-matrix-admin-demo.onrender.com/admin/)**
-
-Experience the Matrix:
-- ⚡ **Matrix Green/Black Theme** - Terminal-style design with neon glow effects
-- 🔍 **Auto-Discovery** - 4 models registered with one line of code
-- 📝 **Full CRUD** - Create, Read, Update, Delete with smooth animations
-- 🎨 **Cyberpunk Aesthetics** - Glassmorphism, micro-interactions, monospace fonts
-- ⚡ **Pre-seeded Data** - Ready to explore immediately
-
-**Run Locally:**
-```bash
-git clone https://github.com/rasinmuhammed/fastapi-matrix-admin.git
-cd fastapi-matrix-admin/demo
-pip install -r requirements.txt
-python app.py
-# Visit http://localhost:8000/admin
-```
+<p align="center">
+  <a href="https://badge.fury.io/py/fastapi-matrix-admin"><img src="https://badge.fury.io/py/fastapi-matrix-admin.svg" alt="PyPI version"></a>
+  <a href="https://github.com/rasinmuhammed/fastapi-matrix-admin/actions/workflows/tests.yml"><img src="https://github.com/rasinmuhammed/fastapi-matrix-admin/workflows/Tests/badge.svg" alt="Tests"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 ---
 
-## ✨ Why FastAPI Matrix Admin?
+**FastAPI Matrix Admin** is a "battery-included" admin panel built for the modern Python stack. It combines the raw power of **Async SQLAlchemy** with a stunning **Terminal-style Cyberpunk UI**.
 
-```python
-# Literally this simple:
-from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import create_async_engine
-from fastapi_matrix_admin import MatrixAdmin
+> "Most admin panels are boring spreadsheets. This one makes you feel like a hacker."
 
-app = FastAPI()
-engine = create_async_engine("postgresql+asyncpg://...")
+### 🌟 Why this exists?
 
-admin = MatrixAdmin(app, engine=engine, secret_key="your-secret")
-admin.auto_discover(Base)  # ✨ Magic! All models registered
-
-# Visit /admin - Full Matrix-themed admin panel!
-```
-
-### What Makes It Different?
-
-**🎨 Unique Matrix Aesthetic**
-- No other FastAPI admin looks like this
-- Terminal-style monospace fonts
-- Green/black cyberpunk theme
-- Neon glow effects on interactive elements
-- Makes your backend look as cool as your frontend
-
-**⚡ Zero Node.js**
-- Pure Python - no npm, no webpack, no build step
-- Just `pip install fastapi-matrix-admin`
-- Tailwind CSS via CDN
-- HTMX for dynamic interactions
-
-**🔍 Auto-Discovery**
-- One line: `admin.auto_discover(Base)`
-- Automatically finds all SQLAlchemy models
-- Smart defaults for list views, search, and forms
-- No configuration needed (but fully customizable)
-
-**🛡️ Production-Ready**
-- Async SQLAlchemy 2.0
-- Pydantic v2 validation
-- CSP middleware
-- CSRF protection
-- URL signing for security
+- **Zero Node.js**: No `npm`, no `webpack`. Pure Python.
+- **Aesthetic First**: A dark mode that actually looks professional (Matrix Green/Black).
+- **Developer Experience**: One-line auto-discovery for all your models.
+- **Performance**: Built for high-concurrency async applications.
 
 ---
 
-## 📦 Installation
+## 🚀 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **🔮 Smart Selects** | Automatically turns Foreign Keys into searchable AJAX dropdowns. |
+| **🧪 Advanced Filters** | Sidebar filters for booleans, dates, relationships, and custom operators. |
+| **📊 Observability** | Real-time Dashboard with CPU, RAM, and Disk metrics. |
+| **💾 Streaming Export** | Export massive datasets to CSV without crashing memory. |
+| **🛡️ Bulletproof Auth** | Secure, session-based authentication with Argon2 hashing. |
+
+---
+
+## 📦 Quick Start
+
+### 1. Install
 
 ```bash
 pip install fastapi-matrix-admin
 ```
 
----
-
-## 🚀 Quick Start
-
-### Minimal Example
+### 2. Plug & Play
 
 ```python
 from fastapi import FastAPI
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import declarative_base
-from fastapi_matrix_admin import Matrix Admin
+from fastapi_matrix_admin import MatrixAdmin
+from models import Base, engine
+
+app = FastAPI()
+
+# Initialize
+admin = MatrixAdmin(app, engine=engine, secret_key="secure-key")
+
+# The Magic Line ✨
+admin.auto_discover(Base)
+```
+
+### 3. Create Admin User
+
+Use the built-in utility to create your first superuser:
+
+```python
+from fastapi_matrix_admin.auth.utils import create_superuser
+
+# In your startup script
+async def create_admin():
+    async with engine.begin() as conn:
+        await create_superuser(conn, User, "admin", "admin@example.com", "secure-password")
+```
+
+[Read the Full Documentation →](https://rasinmuhammed.github.io/fastapi-matrix-admin/)
+
+---
+
+## 🎯 Live Demo
+
+Experience the revolution yourself.
+
+**[👉 Launch Live Demo](https://fastapi-matrix-admin-demo.onrender.com/admin/)**
+
+*(Credentials: `admin` / `admin`)*
+
+---
+
+## 🤝 Contributing
+
+We are open source and community driven.
+Check out [CONTRIBUTING.md](CONTRIBUTING.md) to join the revolution.
+
+## 📄 License
+
+MIT. Build something confident.
 
 # Your SQLAlchemy models
 Base = declarative_base()

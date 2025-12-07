@@ -72,22 +72,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         page: int = 1,
         per_page: int = 25,
-        filters: Dict[str, Any] | None = None,
         search: str | None = None,
         search_fields: list[str] | None = None,
+        filters: dict[str, Any] | None = None,  # New: Advanced Filters
         order_by: list[str] | None = None,
         load_relationships: list[str] | None = None,
     ) -> tuple[Sequence[ModelType], int]:
         """
-        Get a paginated list of records with optional filtering and search.
+        Get a paginated list of records with filtering and sorting.
 
         Args:
             session: Database session
             page: Page number (1-indexed)
             per_page: Records per page
-            filters: Dict of field: value filters
             search: Search query string
             search_fields: Fields to search (for full-text search)
+            filters: Dictionary of field: value filters, supporting operators like 'field__gte'
             order_by: List of fields to order by (prefix with - for DESC)
             load_relationships: Relationships to eager load
 

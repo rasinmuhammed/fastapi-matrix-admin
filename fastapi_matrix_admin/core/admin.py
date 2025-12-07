@@ -97,10 +97,14 @@ class MatrixAdmin:
         templates_dir: Path | str | None = None,
         add_csp_middleware: bool = True,
         max_recursion_depth: int = 5,
+        auth_model: Type["DeclarativeBase"] | None = None,
+        demo_mode: bool = False,
     ):
         self.app = app
         self.title = title
         self.prefix = prefix.rstrip("/")
+        self.auth_model = auth_model
+        self.demo_mode = demo_mode
 
         # Initialize core components
         self.registry = AdminRegistry()
@@ -126,6 +130,11 @@ class MatrixAdmin:
         # Mount static files
         self._mount_statics()
 
+        # Initialize audit logger
+        from fastapi_matrix_admin.audit.models import AuditLogger, AuditLog
+
+        self.audit_logger = AuditLogger(AuditLog)
+
         # Create and include router
         self._setup_router()
 
@@ -147,7 +156,10 @@ class MatrixAdmin:
             templates=self.templates,
             prefix=self.prefix,
             title=self.title,
-            session_dependency=self.db_manager.get_session if self.db_manager else None,
+            session_dependency=self._session_dependency,
+            audit_logger=self.audit_logger,
+            auth_model=self.auth_model,
+            demo_mode=self.demo_mode,
         )
         self.app.include_router(router, prefix=self.prefix)
 
@@ -161,6 +173,7 @@ class MatrixAdmin:
         exclude: list[str] | None = None,
         list_display: list[str] | None = None,
         searchable_fields: list[str] | None = None,
+        filter_fields: list[str] | None = None,
         ordering: list[str] | None = None,
         icon: str = "file",
         readonly: bool = False,
@@ -179,6 +192,7 @@ class MatrixAdmin:
             exclude: Fields to exclude from forms
             list_display: Fields to show in list view
             searchable_fields: Fields that can be searched
+            filter_fields: Fields to generate sidebar filters for
             ordering: Default ordering for lists
             icon: Icon name for sidebar
             readonly: Make model read-only
