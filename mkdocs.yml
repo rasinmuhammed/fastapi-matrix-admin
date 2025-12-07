@@ -7,7 +7,6 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  custom_dir: docs/overrides
   palette:
     # Palette toggle for dark mode
     - scheme: slate
