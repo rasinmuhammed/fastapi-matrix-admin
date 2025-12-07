@@ -114,7 +114,10 @@ class MatrixAdmin:
 
         # Initialize database manager if engine provided
         self.db_manager = DatabaseManager(engine) if engine else None
-        self._session_dependency: Callable | None = None
+        # Auto-initialize session dependency if engine provided
+        self._session_dependency: Callable | None = (
+            self.db_manager.get_session if self.db_manager else None
+        )
 
         # Setup templates
         template_dirs = [TEMPLATES_DIR]
