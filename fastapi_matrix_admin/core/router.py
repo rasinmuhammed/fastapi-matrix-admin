@@ -190,7 +190,7 @@ def create_admin_router(
             import asyncio
 
             await asyncio.sleep(1.0)
-            
+
             context = {
                 "request": request,
                 "title": title,
@@ -211,21 +211,23 @@ def create_admin_router(
 
         # 2. Database Lookup & Auth Logic
         if session and auth_model:
-             # Bulletproof DB Auth
-             from sqlalchemy import select
-             stmt = select(auth_model).where(auth_model.username == username)
-             result = await session.execute(stmt)
-             user = result.scalar_one_or_none()
-             
-             if user and hasattr(user, "verify_password"):
-                 valid_password = user.verify_password(password)
-        
+            # Bulletproof DB Auth
+            from sqlalchemy import select
+
+            stmt = select(auth_model).where(auth_model.username == username)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if user and hasattr(user, "verify_password"):
+                valid_password = user.verify_password(password)
+
         # If no user found via DB lookups then fails.
         if not user or not valid_password:
             # Add a small delay for failed attempts
             import asyncio
+
             await asyncio.sleep(0.5)
-            
+
             return templates.TemplateResponse(
                 "pages/login.html",
                 {
@@ -501,10 +503,11 @@ def create_admin_router(
         if session and hasattr(model_config.model, "__tablename__"):
             # SQLAlchemy model - use CRUD
             crud = CRUDBase(model_config.model)
-            
+
             # Optimization: Detect relationships to eager load (N+1 prevention)
             load_relationships = []
             from sqlalchemy import inspect
+
             inspector = inspect(model_config.model)
             for field in display_fields:
                 if field in inspector.relationships:
