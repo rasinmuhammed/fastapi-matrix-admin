@@ -103,15 +103,11 @@ engine = create_async_engine(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Force fresh database on startup (for demo purposes)
-    import os
-    db_path = "./demo.db"
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        print("🗑️ Deleted old demo.db for fresh seed")
-
-    # Startup - Create all tables
+    # Using drop_all + create_all is more reliable than file deletion
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        print("🔄 Reset database - dropped and recreated all tables")
 
     # Seed demo data
     async_session = async_sessionmaker(engine, expire_on_commit=False)
