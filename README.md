@@ -99,47 +99,6 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) to join the revolution.
 
 MIT. Build something confident.
 
-# Your SQLAlchemy models
-Base = declarative_base()
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    email = Column(String)
-
-# FastAPI app
-appFastAPI()
-engine = create_async_engine("sqlite+aiosqlite:///./database.db")
-
-# Matrix Admin - One line setup!
-admin = MatrixAdmin(app, engine=engine, secret_key="your-secret-key-min-32-chars")
-admin.auto_discover(Base)
-
-# Run: uvicorn app:app
-# Visit: http://localhost:8000/admin
-```
-
-### With Customization
-
-```python
-# Register models with custom configuration
-admin.register(
-    User,
-    list_display=["id", "name", "email", "created_at"],
-    searchable_fields=["name", "email"],
-    ordering=["-created_at"],
-    icon="user",
-)
-
-# Or use auto-discovery with filters
-admin.auto_discover(
-    Base,
-    include=["User", "Post", "Comment"],  # Only these models
-    exclude=["InternalModel"]  # Skip these
-)
-```
-
 ---
 
 ## 🎨 Features
