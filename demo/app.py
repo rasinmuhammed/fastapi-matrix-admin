@@ -292,7 +292,11 @@ admin.register(
 admin.register(Category, icon="tag")
 
 # 5. Admin Users & Audit Logs (System)
-from fastapi_matrix_admin.audit.models import AuditLog
+from fastapi_matrix_admin.audit.models import AuditLog as AuditLogMixin
+
+# Create concrete AuditLog model
+class AuditLog(AuditLogMixin, Base):
+    __tablename__ = "audit_logs"
 
 admin.register(
     User,
@@ -308,10 +312,10 @@ admin.register(
     AuditLog,
     name="Audit Logs",
     icon="activity",
-    list_display=["action", "model", "record_id", "user_id", "timestamp"],
-    searchable_fields=["model", "action", "record_id"],
-    filter_fields=["action", "model"],
-    ordering=["-timestamp"],
+    list_display=["action", "model_name", "record_id", "user_id", "created_at"],
+    searchable_fields=["model_name", "action", "record_id"],
+    filter_fields=["action", "model_name"],
+    ordering=["-created_at"],
     readonly=True,
 )
 
