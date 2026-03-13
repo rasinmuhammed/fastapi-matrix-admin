@@ -1,5 +1,5 @@
 """
-Live Demo for Vercel - FastAPI Shadcn Admin
+Live demo for Vercel - FastAPI Matrix Admin.
 Showcases Matrix UI theme and auto_discover feature
 """
 
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from fastapi_matrix_admin import MatrixAdmin
-from fastapi_matrix_admin.core.registry import ModelConfig
+from fastapi_matrix_admin.audit.models import AuditLog as AuditLogMixin
 
 # Import Auth components
 from fastapi_matrix_admin.auth.models import AdminUserMixin, pwd_context
@@ -20,6 +20,7 @@ from fastapi_matrix_admin.auth.models import AdminUserMixin, pwd_context
 # SQLAlchemy Base
 class Base(DeclarativeBase):
     pass
+
 
 # Define the Admin User model
 class User(AdminUserMixin, Base):
@@ -42,7 +43,7 @@ class BlogPost(Base):
 
     published: Mapped[bool] = mapped_column(Boolean, default=False)
     views: Mapped[int] = mapped_column(Integer, default=0)
-    
+
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=True)
     category: Mapped["Category"] = relationship()
 
@@ -145,7 +146,7 @@ async def lifespan(app: FastAPI):
             )
             session.add_all([a1, a2])
             await session.flush()
-            
+
             # Create Categories
             c1 = Category(name="Tech", description="Technology news")
             c2 = Category(name="Philosophy", description="Deep thoughts")
@@ -178,21 +179,21 @@ async def lifespan(app: FastAPI):
                     description="Wake up from the Matrix.",
                     price=99.99,
                     stock=100,
-                    available=True
+                    available=True,
                 ),
                 Product(
                     name="Blue Pill",
                     description="Stay in wonderland.",
                     price=0.00,
                     stock=1000,
-                    available=True
+                    available=True,
                 ),
                 Product(
                     name="Sunglasses",
                     description="Essential cyberpunk accessory.",
                     price=150.00,
                     stock=50,
-                    available=True
+                    available=True,
                 ),
                 Product(
                     name="Premium Laptop",
@@ -238,7 +239,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app with lifespan
 app = FastAPI(
-    title="FastAPI Shadcn Admin - Live Demo",
+    title="FastAPI Matrix Admin - Live Demo",
     description="Showcasing Matrix UI and Auto-Discovery",
     version="1.0.0",
     lifespan=lifespan,
@@ -256,7 +257,7 @@ admin = MatrixAdmin(
     app,
     engine=engine,
     secret_key="demo-live-key-for-render-deployment",
-    title="FastAPI Shadcn Admin Demo",
+    title="FastAPI Matrix Admin Demo",
     demo_mode=True,
 )
 
@@ -295,11 +296,12 @@ admin.register(
 admin.register(Category, icon="tag")
 
 # 5. Admin Users & Audit Logs (System)
-from fastapi_matrix_admin.audit.models import AuditLog as AuditLogMixin
+
 
 # Create concrete AuditLog model
 class AuditLog(AuditLogMixin, Base):
     __tablename__ = "audit_logs"
+
 
 admin.register(
     User,
@@ -308,7 +310,7 @@ admin.register(
     list_display=["username", "email", "roles", "is_active", "last_login"],
     searchable_fields=["username", "email"],
     filter_fields=["is_active", "roles"],
-    readonly=True, # Protect admin user for now
+    readonly=True,  # Protect admin user for now
 )
 
 admin.register(

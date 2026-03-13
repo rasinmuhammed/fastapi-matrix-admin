@@ -6,8 +6,8 @@ Provides async database operations for SQLAlchemy models.
 
 from __future__ import annotations
 
-from typing import Any, Generic, Type, TypeVar, Sequence, Dict
-from sqlalchemy import select, func, delete as sa_delete, or_
+from typing import Any, Callable, Generic, Type, TypeVar, Sequence, Dict
+from sqlalchemy import select, func, delete as sa_delete, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
@@ -29,6 +29,44 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         users = await crud_user.list(session, page=1, per_page=25)
     """
 
+    @staticmethod
+    def _apply_query_transform(
+        query: Any, query_transform: Callable[[Any], Any] | None
+    ):
+        """Apply an optional query transform hook."""
+        return query_transform(query) if query_transform else query
+
+    def _apply_filters(self, query: Any, filters: dict[str, Any] | None) -> Any:
+        """Apply exact and operator-based filters to a SQLAlchemy query."""
+        if not filters:
+            return query
+
+        conditions = []
+        for raw_field, value in filters.items():
+            field_name, _, operator = raw_field.partition("__")
+            if not hasattr(self.model, field_name):
+                continue
+
+            column = getattr(self.model, field_name)
+            if value in ("", None):
+                continue
+
+            if operator == "gte":
+                conditions.append(column >= value)
+            elif operator == "lte":
+                conditions.append(column <= value)
+            elif operator in {"contains", "icontains"}:
+                conditions.append(column.ilike(f"%{value}%"))
+            elif operator == "in":
+                values = value if isinstance(value, list) else str(value).split(",")
+                conditions.append(column.in_([v for v in values if v != ""]))
+            else:
+                conditions.append(column == value)
+
+        if conditions:
+            query = query.where(and_(*conditions))
+        return query
+
     def __init__(self, model: Type[ModelType]):
         """
         Initialize CRUD object with a SQLAlchemy model.
@@ -44,6 +82,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         id: Any,
         *,
         load_relationships: list[str] | None = None,
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> ModelType | None:
         """
         Get a single record by ID.
@@ -57,6 +96,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             Model instance or None if not found
         """
         query = select(self.model).where(self.model.id == id)
+        query = self._apply_query_transform(query, query_transform)
 
         # Eager load relationships to avoid N+1 queries
         if load_relationships:
@@ -77,6 +117,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         filters: dict[str, Any] | None = None,  # New: Advanced Filters
         order_by: list[str] | None = None,
         load_relationships: list[str] | None = None,
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> tuple[Sequence[ModelType], int]:
         """
         Get a paginated list of records with filtering and sorting.
@@ -96,12 +137,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         # Base query
         query = select(self.model)
+        query = self._apply_query_transform(query, query_transform)
 
         # Apply filters
-        if filters:
-            for field, value in filters.items():
-                if hasattr(self.model, field):
-                    query = query.where(getattr(self.model, field) == value)
+        query = self._apply_filters(query, filters)
 
         # Apply search
         if search and search_fields:
@@ -183,6 +222,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         id: Any,
         obj_in: UpdateSchemaType | Dict[str, Any],
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> ModelType | None:
         """
         Update an existing record.
@@ -195,7 +235,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Updated model instance or None if not found
         """
-        db_obj = await self.get(session, id)
+        db_obj = await self.get(session, id, query_transform=query_transform)
         if not db_obj:
             return None
 
@@ -218,6 +258,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session: AsyncSession,
         *,
         id: Any,
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> bool:
         """
         Delete a record by ID.
@@ -229,6 +270,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             True if deleted, False if not found
         """
+        if query_transform:
+            scoped_record = await self.get(session, id, query_transform=query_transform)
+            if not scoped_record:
+                return False
+
         result = await session.execute(sa_delete(self.model).where(self.model.id == id))
         await session.flush()
 
@@ -239,6 +285,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session: AsyncSession,
         *,
         filters: Dict[str, Any] | None = None,
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> int:
         """
         Count total records with optional filters.
@@ -250,12 +297,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Total count
         """
-        query = select(func.count()).select_from(self.model)
-
-        if filters:
-            for field, value in filters.items():
-                if hasattr(self.model, field):
-                    query = query.where(getattr(self.model, field) == value)
+        base_query = select(self.model)
+        base_query = self._apply_query_transform(base_query, query_transform)
+        base_query = self._apply_filters(base_query, filters)
+        query = select(func.count()).select_from(base_query.subquery())
 
         result = await session.execute(query)
         return result.scalar_one()
@@ -265,6 +310,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session: AsyncSession,
         *,
         ids: list[Any],
+        query_transform: Callable[[Any], Any] | None = None,
     ) -> int:
         """
         Delete multiple records by IDs.
@@ -276,8 +322,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Number of deleted records
         """
+        if query_transform:
+            scoped_ids_query = self._apply_query_transform(
+                select(self.model.id).where(self.model.id.in_(ids)),
+                query_transform,
+            )
+            scoped_ids_result = await session.execute(scoped_ids_query)
+            scoped_ids = list(scoped_ids_result.scalars().all())
+        else:
+            scoped_ids = ids
+
+        if not scoped_ids:
+            return 0
+
         result = await session.execute(
-            sa_delete(self.model).where(self.model.id.in_(ids))
+            sa_delete(self.model).where(self.model.id.in_(scoped_ids))
         )
         await session.flush()
 

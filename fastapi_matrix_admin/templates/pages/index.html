@@ -7,7 +7,7 @@
 <div class="space-y-6">
     {# Futuristic Hero Header - Green Matrix Aesthetic #}
     <div
-        class="relative overflow-hidden rounded-2xl bg-black border border-emerald-500/20 p-8 shadow-2xl shadow-emerald-500/10">
+        class="matrix-panel-strong relative overflow-hidden rounded-[2rem] p-8 shadow-2xl shadow-emerald-500/10 lg:p-10">
         {# Animated gradient background #}
         <div class="absolute inset-0 bg-gradient-to-br from-emerald-950 via-black to-black opacity-80"></div>
         {# Green glow spill effect #}
@@ -15,26 +15,38 @@
         <div class="absolute bottom-0 left-0 w-72 h-72 bg-lime-500/10 rounded-full blur-3xl"></div>
 
         <div class="relative z-10">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <div class="flex items-center space-x-3 mb-2">
                         <div class="h-1 w-12 bg-gradient-to-r from-emerald-500 to-lime-400"></div>
-                        <span class="text-emerald-400 text-sm font-mono uppercase tracking-wider">System Active</span>
+                        <span class="text-emerald-400 text-sm font-mono uppercase tracking-[0.35em]">System Active</span>
                     </div>
-                    <h1 class="text-6xl font-black tracking-tight text-white mb-2"
+                    <h1 class="matrix-title text-5xl font-black tracking-tight text-white mb-3 lg:text-7xl"
                         style="text-shadow: 0 0 30px rgba(16, 185, 129, 0.5);">
                         Dashboard
                     </h1>
-                    <p class="text-emerald-100 text-lg font-light">{{ admin_title }} Control Center</p>
+                    <p class="max-w-2xl text-emerald-100 text-lg font-light">{{ admin_title }} Control Center for teams who want admin work to feel fast, cinematic, and unusually sharp.</p>
+                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                        <span class="matrix-kbd font-mono">/</span>
+                        <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Search from any list</span>
+                        <span class="matrix-kbd font-mono">N</span>
+                        <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Create from list screens</span>
+                    </div>
                 </div>
                 {# Live metrics badge #}
-                <div class="hidden md:flex flex-col items-end space-y-2">
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+                    <div class="matrix-panel rounded-2xl px-4 py-3">
+                        <div class="text-[10px] font-mono uppercase tracking-[0.3em] text-emerald-700">Current loadout</div>
+                        <div class="mt-2 text-sm text-emerald-100">{{ registered_models|length }} registered modules</div>
+                    </div>
+                    <div class="matrix-panel rounded-2xl px-4 py-3">
                     <div class="flex items-center space-x-2 text-emerald-400 text-sm font-mono">
                         <div class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></div>
                         <div class="h-2 w-2 rounded-full bg-emerald-500 absolute"></div>
                         <span id="currentTime" class="text-emerald-300"></span>
                     </div>
-                    <div class="text-xs text-emerald-600 font-mono">{{ registered_models|length }} MODULES ONLINE</div>
+                    <div class="mt-2 text-xs text-emerald-600 font-mono uppercase tracking-[0.3em]">Matrix online</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -44,7 +56,7 @@
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {% for kpi in kpis %}
         <div
-            class="group relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-5 hover:border-emerald-400/60 transition-all duration-300">
+            class="group matrix-panel relative overflow-hidden rounded-2xl p-5 hover:border-emerald-400/60 transition-all duration-300">
             {# Green glow on hover #}
             <div
                 class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">

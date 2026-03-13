@@ -61,16 +61,12 @@ vercel --prod
 - `DATABASE_URL` - Database connection (defaults to SQLite)
 - `READONLY_MODE` - Set to `true` for public demos
 
-### Read-Only Mode
+### Read-Only Models
 
-To prevent public users from modifying data:
+To keep specific models view-only in a public demo:
 
 ```python
-admin = ShadcnAdmin(
-    app,
-    engine=engine,
-    readonly=True  # Enable read-only mode
-)
+admin.register(BlogPost, readonly=True)
 ```
 
 ## Tech Stack

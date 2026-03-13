@@ -99,7 +99,7 @@ class Comment(Base):
 # --- FastAPI App ---
 
 app = FastAPI(
-    title="FastAPI Shadcn Admin - Auto-Discovery Demo",
+    title="FastAPI Matrix Admin - Auto-Discovery Demo",
     description="✨ Watch the magic happen!",
 )
 

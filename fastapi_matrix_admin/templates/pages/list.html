@@ -13,18 +13,26 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-6" data-create-url="{% if not model_config.readonly %}{{ url_for('admin:create', model=model_config.name) }}{% endif %}">
     {# Header with Terminal Aesthetic #}
-    <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-6">
+    <div class="matrix-panel-strong relative overflow-hidden rounded-3xl p-6 lg:p-7">
         <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
-        <div class="relative z-10 flex items-center justify-between">
+        <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
                     <div class="h-px w-8 bg-emerald-500"></div>
-                    <span class="text-xs font-mono text-emerald-600 uppercase tracking-widest">DATA MODULE</span>
+                    <span class="text-xs font-mono text-emerald-600 uppercase tracking-[0.35em]">DATA MODULE</span>
                 </div>
-                <h1 class="text-3xl font-black text-white font-mono mb-1">{{ model_config.name }}</h1>
-                <p class="text-emerald-300 text-sm font-mono">Manage your {{ model_config.name | lower }} records</p>
+                <h1 class="matrix-title text-4xl font-black text-white font-mono mb-2">{{ model_config.name }}</h1>
+                <p class="text-emerald-100/80 text-sm">Manage your {{ model_config.name | lower }} records with fast search, scoped actions, and export-ready filters.</p>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="matrix-kbd font-mono">/</span>
+                    <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Jump to search</span>
+                    {% if not model_config.readonly %}
+                    <span class="matrix-kbd font-mono">N</span>
+                    <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Create new record</span>
+                    {% endif %}
+                </div>
             </div>
             {% if not model_config.readonly %}
             <div class="flex items-center space-x-2">
@@ -54,9 +62,29 @@
         </div>
     </div>
 
+    {% if rows and bulk_actions %}
+    <form method="POST" action="{{ url_for('admin:run_action', model=model_config.name, action_name='bulk_delete') }}"
+        id="bulk-actions-form" class="matrix-panel rounded-2xl p-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="text-xs font-mono uppercase tracking-widest text-emerald-600">Bulk actions</span>
+            <select id="bulk-action-select"
+                class="h-10 rounded-lg bg-black border border-emerald-500/20 px-3 text-sm font-mono text-emerald-100">
+                {% for action_name in bulk_actions %}
+                <option value="{{ action_name }}">{{ action_name.replace('_', ' ').title() }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit"
+                class="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 text-sm font-mono text-emerald-100 hover:bg-emerald-500/20 transition-all">
+                Run Selected
+            </button>
+            <span class="text-xs font-mono text-emerald-700">Select rows below, then run an action.</span>
+        </div>
+    </form>
+    {% endif %}
+
     {# Search Bar - Matrix Style #}
     {% if model_config.searchable_fields or filter_definitions %}
-    <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30 p-4"
+    <div class="matrix-panel relative overflow-hidden rounded-2xl p-4"
         x-data="{ showFilters: false }">
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-lime-500/5 rounded-full blur-3xl"></div>
         <div class="relative z-10 flex items-center space-x-3">
@@ -68,7 +96,7 @@
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
-            <input type="search" name="search" placeholder="Search records..." value="{{ search_query or '' }}"
+            <input id="search-input" type="search" name="search" placeholder="Search records..." value="{{ search_query or '' }}"
                 class="flex-1 h-10 bg-black border border-emerald-500/20 rounded-lg px-4 text-sm font-mono text-emerald-100 placeholder:text-emerald-800 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                 hx-get="{{ url_for('admin:list', model=model_config.name) }}"
                 hx-trigger="input changed delay:500ms, search" hx-target="#data-table" hx-swap="innerHTML"
@@ -174,7 +202,7 @@
     {% endif %}
 
     {# Data Table - Terminal Matrix Style #}
-    <div class="relative overflow-hidden rounded-xl bg-black border border-emerald-500/30">
+    <div class="matrix-panel relative overflow-hidden rounded-3xl">
         <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
         <div id="data-table" class="relative z-10">
             {# Table Header #}
@@ -182,7 +210,7 @@
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-mono font-bold text-emerald-400 uppercase tracking-wider">RECORDS DATABASE
                     </h3>
-                    <span class="text-xs font-mono text-emerald-600">{{ rows|length }} of {{ rows|length }}</span>
+                    <span class="text-xs font-mono text-emerald-600">{{ rows|length }} of {{ total }}</span>
                 </div>
             </div>
 
@@ -192,6 +220,11 @@
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-emerald-500/20 bg-emerald-950/20">
+                            <th
+                                class="px-4 py-3 text-left text-xs font-mono font-bold text-emerald-500 uppercase tracking-widest">
+                                <input type="checkbox" id="select-all"
+                                    class="rounded border-emerald-500/30 bg-black text-emerald-400">
+                            </th>
                             {% for col in columns %}
                             <th
                                 class="px-4 py-3 text-left text-xs font-mono font-bold text-emerald-500 uppercase tracking-widest">
@@ -208,6 +241,10 @@
                         {% for row in rows %}
                         <tr class="group border-b border-emerald-500/10 hover:bg-emerald-950/30 transition-all duration-200"
                             data-row-id="{{ row[id_field] }}">
+                            <td class="px-4 py-3">
+                                <input type="checkbox" name="selected_ids" form="bulk-actions-form" value="{{ row[id_field] }}"
+                                    class="row-checkbox rounded border-emerald-500/30 bg-black text-emerald-400">
+                            </td>
                             {% for col in columns %}
                             <td
                                 class="px-4 py-3 text-sm font-mono text-emerald-100 group-hover:text-white transition-colors">
@@ -229,6 +266,7 @@
 
                                     {# Delete Button #}
                                     <button type="button"
+                                        data-delete-url="{{ url_for('admin:delete', model=model_config.name, id=row[id_field]) }}?token={{ delete_tokens[row[id_field]|string] }}"
                                         onclick="confirmDelete('{{ model_config.name }}', '{{ row[id_field] }}', this)"
                                         class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 hover:border-red-400/50 transition-all group/btn">
                                         <svg class="h-4 w-4 text-red-400 group-hover/btn:text-red-300 transition-colors"
@@ -440,11 +478,8 @@
         btn.innerHTML = '<div class="h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>';
 
         try {
-            const response = await fetch(`/admin/${deleteModelName}/${deleteRecordId}`, {
+            const response = await fetch(deleteButton.dataset.deleteUrl, {
                 method: 'DELETE',
-                headers: {
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                }
             });
 
             if (response.ok) {
@@ -515,6 +550,39 @@
     document.getElementById('delete-modal').addEventListener('click', function (e) {
         if (e.target === this) {
             closeDeleteModal();
+        }
+    });
+
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            document.querySelectorAll('.row-checkbox').forEach((checkbox) => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    const bulkForm = document.getElementById('bulk-actions-form');
+    const bulkActionSelect = document.getElementById('bulk-action-select');
+    if (bulkForm && bulkActionSelect) {
+        bulkForm.addEventListener('submit', function () {
+            this.action = `{{ url_for('admin:run_action', model=model_config.name, action_name='bulk_delete') }}`.replace('bulk_delete', bulkActionSelect.value);
+        });
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.target.matches('input, textarea, select')) return;
+
+        if (event.key === '/') {
+            event.preventDefault();
+            document.getElementById('search-input')?.focus();
+        }
+
+        if (event.key.toLowerCase() === 'n') {
+            const createUrl = document.querySelector('[data-create-url]')?.dataset.createUrl;
+            if (createUrl) {
+                window.location.href = createUrl;
+            }
         }
     });
 </script>

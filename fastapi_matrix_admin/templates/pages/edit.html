@@ -218,6 +218,19 @@
                     {{ inputs.relationship_input(field, values.get(field.name), errors.get(field.name)[0] if
                     errors.get(field.name) else None) }}
 
+                    {# JSON Input #}
+                    {% elif field.field_type.value == "json" %}
+                    <label class="block">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-mono font-semibold text-emerald-400">
+                                {{ field.title }}{% if field.required %}<span class="text-red-400 ml-1">*</span>{% endif %}
+                            </span>
+                        </div>
+                        <textarea name="{{ field.name }}" rows="8"
+                            class="w-full px-4 py-3 rounded-lg bg-black border border-emerald-500/20 text-emerald-100 font-mono text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-y"
+                            placeholder='{"key": "value"}'>{{ values.get(field.name, field.default or '') }}</textarea>
+                    </label>
+
                     {# Fallback for other types #}
                     {% else %}
                     <label class="block">
@@ -265,6 +278,19 @@
             </div>
         </form>
     </div>
+
+    {% if detail_panels and record %}
+    <div class="space-y-4">
+        {% for panel in detail_panels %}
+        <div class="rounded-xl bg-black border border-emerald-500/20 p-5">
+            <h3 class="text-sm font-mono font-bold text-emerald-400 uppercase tracking-widest mb-3">{{ panel.title }}</h3>
+            <div class="text-sm font-mono text-emerald-200">
+                {{ panel.renderer(request=request, record=record, config=model_config)|safe }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 
 {# Toast Container #}
@@ -289,8 +315,20 @@
 </style>
 
 <script nonce="{{ csp_nonce }}">
+    let isDirty = false;
+    document.querySelectorAll('form input, form textarea, form select').forEach((el) => {
+        el.addEventListener('change', () => { isDirty = true; });
+    });
+
+    window.addEventListener('beforeunload', function (event) {
+        if (!isDirty) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
     // Form submission with loading state
     function handleFormSubmit(e) {
+        isDirty = false;
         const btn = document.getElementById('submit-btn');
         if (btn) {
             btn.disabled = true;
@@ -299,26 +337,15 @@
     }
 
     // Delete confirmation for edit page
-    function confirmDelete() {
+    async function confirmDelete() {
         if (confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ url_for("admin:delete", model=model_config.name, id=record_id) if record_id else "#" }}';
-
-            const methodInput = document.createElement('input');
-            methodInput.type = 'hidden';
-            methodInput.name = '_method';
-            methodInput.value = 'DELETE';
-            form.appendChild(methodInput);
-
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_csrf_token';
-            csrfInput.value = '{{ csrf_token }}';
-            form.appendChild(csrfInput);
-
-            document.body.appendChild(form);
-            form.submit();
+            const response = await fetch('{{ url_for("admin:delete", model=model_config.name, id=record_id) if record_id else "#" }}?token={{ delete_token }}', {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                isDirty = false;
+                window.location.href = '{{ url_for("admin:list", model=model_config.name) }}';
+            }
         }
     }
 

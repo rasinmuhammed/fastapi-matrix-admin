@@ -19,9 +19,16 @@ This is critical for preventing IDOR and information disclosure.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Type, TYPE_CHECKING
+from typing import Any, Type, TYPE_CHECKING
 
 from pydantic import BaseModel
+
+from fastapi_matrix_admin.core.views import (
+    AdminAction,
+    DashboardCard,
+    DetailPanel,
+    ModelAdmin,
+)
 
 
 # Public API
@@ -83,6 +90,26 @@ class ModelConfig:
     ordering: list[str] = field(default_factory=list)
     icon: str = "file"
     readonly: bool = False
+    permissions: dict[str, list[str]] = field(
+        default_factory=lambda: {
+            "view": ["*"],
+            "create": ["admin"],
+            "edit": ["admin"],
+            "delete": ["admin"],
+            "export": ["admin"],
+        }
+    )
+    row_scope: Any = None
+    actions: list[AdminAction] = field(default_factory=list)
+    field_overrides: dict[str, dict[str, Any]] = field(default_factory=dict)
+    widgets: dict[str, str] = field(default_factory=dict)
+    query_options: dict[str, Any] = field(default_factory=dict)
+    eager_load: list[str] = field(default_factory=list)
+    detail_panels: list[DetailPanel] = field(default_factory=list)
+    dashboard_cards: list[DashboardCard] = field(default_factory=list)
+    menu_group: str | None = None
+    menu_label: str | None = None
+    menu_order: int = 100
 
     # Internal fields
     _subtype_names: set[str] = field(default_factory=set, init=False, repr=False)
@@ -166,9 +193,23 @@ class AdminRegistry:
         exclude: list[str] | None = None,
         list_display: list[str] | None = None,
         searchable_fields: list[str] | None = None,
+        filter_fields: list[str] | None = None,
         ordering: list[str] | None = None,
         icon: str = "file",
         readonly: bool = False,
+        permissions: dict[str, list[str]] | None = None,
+        row_scope: Any = None,
+        actions: list[AdminAction] | None = None,
+        field_overrides: dict[str, dict[str, Any]] | None = None,
+        widgets: dict[str, str] | None = None,
+        query_options: dict[str, Any] | None = None,
+        eager_load: list[str] | None = None,
+        detail_panels: list[DetailPanel] | None = None,
+        dashboard_cards: list[DashboardCard] | None = None,
+        menu_group: str | None = None,
+        menu_label: str | None = None,
+        menu_order: int = 100,
+        admin: ModelAdmin | type[ModelAdmin] | None = None,
     ) -> ModelConfig:
         """
         Register a model with the admin.
@@ -191,6 +232,31 @@ class AdminRegistry:
         Raises:
             RegistryError: If model is already registered
         """
+        if admin is not None:
+            admin_config = admin.as_config(model) if isinstance(admin, type) else admin
+            model = admin_config.model or model
+            name = name or admin_config.name
+            fields = fields or admin_config.fields
+            exclude = exclude or admin_config.exclude
+            list_display = list_display or admin_config.list_display
+            searchable_fields = searchable_fields or admin_config.searchable_fields
+            filter_fields = filter_fields or admin_config.filter_fields
+            ordering = ordering or admin_config.ordering
+            icon = admin_config.icon or icon
+            readonly = readonly or admin_config.readonly
+            permissions = permissions or admin_config.permissions
+            row_scope = row_scope or admin_config.row_scope
+            actions = actions or admin_config.actions
+            field_overrides = field_overrides or admin_config.field_overrides
+            widgets = widgets or admin_config.widgets
+            query_options = query_options or admin_config.query_options
+            eager_load = eager_load or admin_config.eager_load
+            detail_panels = detail_panels or admin_config.detail_panels
+            dashboard_cards = dashboard_cards or admin_config.dashboard_cards
+            menu_group = menu_group or admin_config.menu_group
+            menu_label = menu_label or admin_config.menu_label
+            menu_order = admin_config.menu_order
+
         model_name = name or model.__name__
 
         if model_name in self._models:
@@ -204,13 +270,40 @@ class AdminRegistry:
             exclude=exclude or [],
             list_display=list_display or [],
             searchable_fields=searchable_fields or [],
+            filter_fields=filter_fields or [],
             ordering=ordering or [],
             icon=icon,
             readonly=readonly,
+            permissions=permissions
+            or {
+                "view": ["*"],
+                "create": ["admin"],
+                "edit": ["admin"],
+                "delete": ["admin"],
+                "export": ["admin"],
+            },
+            row_scope=row_scope,
+            actions=actions or [],
+            field_overrides=field_overrides or {},
+            widgets=widgets or {},
+            query_options=query_options or {},
+            eager_load=eager_load or [],
+            detail_panels=detail_panels or [],
+            dashboard_cards=dashboard_cards or [],
+            menu_group=menu_group,
+            menu_label=menu_label or model_name,
+            menu_order=menu_order,
         )
 
         self._models[model_name] = config
         return config
+
+    def add_view(self, admin: ModelAdmin | type[ModelAdmin]) -> ModelConfig:
+        """Register a model using a ModelAdmin subclass or instance."""
+        admin_config = admin.as_config() if isinstance(admin, type) else admin
+        if admin_config.model is None:
+            raise RegistryError("ModelAdmin must define a model")
+        return self.register(admin_config.model, admin=admin_config)
 
     def get(self, name: str) -> ModelConfig:
         """

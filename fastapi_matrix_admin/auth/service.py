@@ -6,6 +6,7 @@ Handles login, logout, and session verification.
 
 from __future__ import annotations
 
+import os
 from typing import Optional, TYPE_CHECKING
 
 from fastapi import Request, Response, HTTPException
@@ -39,6 +40,9 @@ class AuthService:
         """
         self.signer = signer
         self.user_model = user_model
+        self.secure_cookies = (
+            os.getenv("ADMIN_SECURE_COOKIES", "false").lower() == "true"
+        )
 
     async def authenticate(
         self,
@@ -113,7 +117,7 @@ class AuthService:
             value=token,
             max_age=max_age,
             httponly=True,  # Prevent JavaScript access
-            secure=True,  # HTTPS only
+            secure=self.secure_cookies,
             samesite="lax",  # CSRF protection
         )
 

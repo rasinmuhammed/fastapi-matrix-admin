@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ title }} - Admin{% endblock %}</title>
+    <meta name="description"
+        content="FastAPI Matrix Admin brings a developer-obsessed Matrix control surface to FastAPI and async SQLAlchemy applications." />
+    <meta name="theme-color" content="#020617" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&display=swap"
+        rel="stylesheet">
 
     <!-- Tailwind CSS via CDN (Zero Node.js) -->
     <script src="https://cdn.tailwindcss.com" nonce="{{ csp_nonce }}"></script>
@@ -60,9 +67,92 @@
 
     <!-- Custom Styles -->
     <style nonce="{{ csp_nonce }}">
-        /* Shadcn-like focus rings */
+        :root {
+            --matrix-bg: #020617;
+            --matrix-bg-soft: #03100f;
+            --matrix-panel: rgba(2, 6, 23, 0.88);
+            --matrix-panel-strong: rgba(0, 0, 0, 0.84);
+            --matrix-border: rgba(52, 211, 153, 0.18);
+            --matrix-border-strong: rgba(110, 231, 183, 0.36);
+            --matrix-glow: rgba(16, 185, 129, 0.22);
+            --matrix-text: #ecfdf5;
+            --matrix-muted: #6ee7b7;
+            --matrix-dim: #065f46;
+            --matrix-blue: #38bdf8;
+        }
+
         .ring-offset-background {
-            --tw-ring-offset-color: hsl(240 10% 3.9%);
+            --tw-ring-offset-color: var(--matrix-bg);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(16, 185, 129, 0.12), transparent 28%),
+                radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 24%),
+                linear-gradient(180deg, #010409 0%, #020617 45%, #000000 100%);
+            color: var(--matrix-text);
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .matrix-shell::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.18;
+            background-image:
+                linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
+            background-size: 32px 32px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 95%);
+        }
+
+        .matrix-shell::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(16, 185, 129, 0.02) 0px,
+                    rgba(16, 185, 129, 0.02) 2px,
+                    transparent 2px,
+                    transparent 6px);
+            mix-blend-mode: screen;
+            opacity: 0.2;
+        }
+
+        .matrix-panel {
+            background: linear-gradient(180deg, rgba(3, 7, 18, 0.92), rgba(0, 0, 0, 0.88));
+            border: 1px solid var(--matrix-border);
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(14px);
+        }
+
+        .matrix-panel-strong {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.95), rgba(2, 6, 23, 0.96));
+            border: 1px solid var(--matrix-border-strong);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.06), 0 24px 80px rgba(0, 0, 0, 0.55);
+        }
+
+        .matrix-title {
+            letter-spacing: -0.03em;
+            text-wrap: balance;
+            text-shadow: 0 0 18px rgba(16, 185, 129, 0.18);
+        }
+
+        .matrix-kbd {
+            border: 1px solid rgba(110, 231, 183, 0.25);
+            background: rgba(6, 95, 70, 0.2);
+            color: #d1fae5;
+            border-radius: 999px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.7rem;
+            line-height: 1;
         }
 
         /* Smooth transitions */
@@ -105,17 +195,19 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="min-h-screen bg-background font-sans antialiased">
-    <div class="flex min-h-screen">
+<body class="min-h-screen antialiased">
+    <div class="matrix-shell flex min-h-screen" x-data="{ mobileNav: false }">
         <!-- Sidebar - Matrix Theme -->
-        <aside class="w-64 border-r border-emerald-500/20 bg-black hidden md:block">
+        <aside
+            class="matrix-panel-strong fixed inset-y-0 left-0 z-50 w-72 border-r border-emerald-500/20 md:static md:block"
+            :class="mobileNav ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
             <!-- Branding Header -->
             <div
-                class="flex h-16 items-center border-b border-emerald-500/30 px-6 bg-gradient-to-r from-emerald-950/20 to-transparent">
+                class="flex h-20 items-center border-b border-emerald-500/20 px-6 bg-gradient-to-r from-emerald-950/40 via-emerald-950/10 to-transparent">
                 <a href="{{ url_for('admin:index') }}" class="flex items-center space-x-3 group">
                     <!-- Matrix-style logo -->
                     <div
-                        class="relative flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 group-hover:bg-emerald-500/20 group-hover:border-emerald-400/50 transition-all">
+                        class="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/30 group-hover:bg-emerald-500/20 group-hover:border-emerald-400/50 transition-all">
                         <svg class="h-5 w-5 text-emerald-400 group-hover:text-emerald-300 transition-colors" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -126,14 +218,22 @@
                     </div>
                     <div>
                         <span
-                            class="font-bold text-emerald-100 font-mono text-sm tracking-wider group-hover:text-white transition-colors">{{
+                            class="font-bold text-emerald-100 font-mono text-sm tracking-[0.18em] group-hover:text-white transition-colors">{{
                             admin_title }}</span>
                         <div class="flex items-center space-x-1 mt-0.5">
                             <div class="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span class="text-[10px] font-mono text-emerald-600 uppercase tracking-widest">ONLINE</span>
+                            <span class="text-[10px] font-mono text-emerald-600 uppercase tracking-[0.3em]">ONLINE</span>
                         </div>
                     </div>
                 </a>
+            </div>
+
+            <div class="px-4 pt-4">
+                <div class="matrix-panel rounded-2xl p-4">
+                    <p class="font-mono text-[10px] uppercase tracking-[0.3em] text-emerald-600">FastAPI-native</p>
+                    <h2 class="mt-2 text-lg font-bold text-white matrix-title">Operator-first control surface</h2>
+                    <p class="mt-2 text-sm text-emerald-100/80">Built for async SQLAlchemy teams that want speed, sharp visuals, and less admin glue code.</p>
+                </div>
             </div>
 
             <!-- Navigation -->
@@ -162,20 +262,20 @@
                 </div>
 
                 <!-- Model Links -->
-                {% for model_name in models %}
-                <a href="{{ url_for('admin:list', model=model_name) }}"
-                    class="group flex items-center justify-between rounded-lg px-3 py-2 border border-transparent hover:border-emerald-500/20 hover:bg-emerald-950/30 transition-all {% if current_model == model_name %}bg-emerald-950/30 border-emerald-500/30{% endif %}">
+                {% for model_config in models %}
+                <a href="{{ url_for('admin:list', model=model_config.name) }}"
+                    class="group flex items-center justify-between rounded-lg px-3 py-2 border border-transparent hover:border-emerald-500/20 hover:bg-emerald-950/30 transition-all {% if current_model == model_config.name %}bg-emerald-950/30 border-emerald-500/30{% endif %}">
                     <div class="flex items-center space-x-3">
-                        <svg class="h-5 w-5 {% if current_model == model_name %}text-emerald-400{% else %}text-emerald-600 group-hover:text-emerald-400{% endif %} transition-colors"
+                        <svg class="h-5 w-5 {% if current_model == model_config.name %}text-emerald-400{% else %}text-emerald-600 group-hover:text-emerald-400{% endif %} transition-colors"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                         <span
-                            class="font-mono text-sm {% if current_model == model_name %}text-emerald-100 font-semibold{% else %}text-emerald-300 group-hover:text-emerald-100{% endif %} transition-colors">{{
-                            model_name }}</span>
+                            class="font-mono text-sm {% if current_model == model_config.name %}text-emerald-100 font-semibold{% else %}text-emerald-300 group-hover:text-emerald-100{% endif %} transition-colors">{{
+                            model_config.menu_label or model_config.name }}</span>
                     </div>
-                    {% if current_model == model_name %}
+                    {% if current_model == model_config.name %}
                     <div class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
                     {% endif %}
                 </a>
@@ -187,18 +287,20 @@
                 {% endif %}
             </nav>
         </aside>
+        <div x-show="mobileNav" x-transition.opacity class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            @click="mobileNav = false"></div>
 
         <!-- Main Content -->
         <main class="flex-1 overflow-auto">
             <!-- Top Bar - Matrix Theme -->
             <header
-                class="sticky top-0 z-40 border-b border-emerald-500/20 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
-                <div class="flex h-16 items-center justify-between px-6">
+                class="sticky top-0 z-40 border-b border-emerald-500/20 bg-black/80 backdrop-blur-xl">
+                <div class="flex h-20 items-center justify-between px-6">
                     <div class="flex items-center space-x-4">
                         <!-- Mobile menu button -->
                         <button
                             class="md:hidden inline-flex items-center justify-center rounded-md p-2 text-emerald-400 hover:bg-emerald-950/30 hover:text-emerald-300 border border-transparent hover:border-emerald-500/20 transition-all"
-                            x-data @click="$dispatch('toggle-sidebar')">
+                            @click="mobileNav = true">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -208,6 +310,20 @@
                     </div>
 
                     <div class="flex items-center space-x-4">
+                        <div class="hidden xl:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-950/20 px-3 py-2">
+                            <span class="matrix-kbd font-mono">/</span>
+                            <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Search</span>
+                            <span class="matrix-kbd font-mono">N</span>
+                            <span class="text-xs font-mono uppercase tracking-[0.25em] text-emerald-600">Create</span>
+                        </div>
+                        {% if current_user %}
+                        <div class="hidden sm:flex items-center space-x-2 rounded-lg border border-emerald-500/20 px-3 py-1.5">
+                            <span class="text-xs font-mono text-emerald-600 uppercase">Operator</span>
+                            <span class="text-sm font-mono text-emerald-100">{{ current_user.username }}</span>
+                        </div>
+                        <a href="{{ url_for('admin:logout') }}"
+                            class="text-xs font-mono uppercase tracking-wider text-emerald-400 hover:text-emerald-200 transition-colors">Logout</a>
+                        {% endif %}
                         <!-- Loading indicator -->
                         <div class="htmx-indicator">
                             <div class="flex items-center space-x-2">
@@ -226,7 +342,7 @@
             </header>
 
             <!-- Page Content -->
-            <div class="p-6">
+            <div class="p-6 lg:p-8">
                 {% block content %}{% endblock %}
             </div>
         </main>

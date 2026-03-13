@@ -157,7 +157,7 @@ class="") %}
     
     async search() {
         if (this.query.length < 1) { this.results = []; return; }
-        let url = `/admin/api/search/${this.targetModel}?q=` + encodeURIComponent(this.query);
+        let url = `{{ url_for('admin:search_related', model=field.target_model or 'model') }}` + `?q=` + encodeURIComponent(this.query);
         try {
             let res = await fetch(url);
             if (res.ok) {

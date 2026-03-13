@@ -42,6 +42,7 @@ from fastapi_matrix_admin.core.integrator import SchemaWalker
 from fastapi_matrix_admin.core.router import create_admin_router
 from fastapi_matrix_admin.core.database import DatabaseManager
 from fastapi_matrix_admin.core.discovery import AutoDiscovery
+from fastapi_matrix_admin.core.views import ModelAdmin
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import DeclarativeBase
@@ -98,13 +99,17 @@ class MatrixAdmin:
         add_csp_middleware: bool = True,
         max_recursion_depth: int = 5,
         auth_model: Type["DeclarativeBase"] | None = None,
+        audit_model: Type["DeclarativeBase"] | None = None,
         demo_mode: bool = False,
+        secure_cookies: bool | None = None,
     ):
         self.app = app
         self.title = title
         self.prefix = prefix.rstrip("/")
         self.auth_model = auth_model
+        self.audit_model = audit_model
         self.demo_mode = demo_mode
+        self.secure_cookies = secure_cookies
 
         # Initialize core components
         self.registry = AdminRegistry()
@@ -134,9 +139,9 @@ class MatrixAdmin:
         self._mount_statics()
 
         # Initialize audit logger
-        from fastapi_matrix_admin.audit.models import AuditLogger, AuditLog
+        from fastapi_matrix_admin.audit.models import AuditLogger
 
-        self.audit_logger = AuditLogger(AuditLog)
+        self.audit_logger = AuditLogger(audit_model) if audit_model else None
 
         # Create and include router
         self._setup_router()
@@ -163,6 +168,7 @@ class MatrixAdmin:
             audit_logger=self.audit_logger,
             auth_model=self.auth_model,
             demo_mode=self.demo_mode,
+            secure_cookies=self.secure_cookies,
         )
         self.app.include_router(router, prefix=self.prefix)
 
@@ -180,6 +186,19 @@ class MatrixAdmin:
         ordering: list[str] | None = None,
         icon: str = "file",
         readonly: bool = False,
+        permissions: dict[str, list[str]] | None = None,
+        row_scope=None,
+        actions=None,
+        field_overrides: dict[str, dict] | None = None,
+        widgets: dict[str, str] | None = None,
+        query_options: dict | None = None,
+        eager_load: list[str] | None = None,
+        detail_panels=None,
+        dashboard_cards=None,
+        menu_group: str | None = None,
+        menu_label: str | None = None,
+        menu_order: int = 100,
+        admin: ModelAdmin | type[ModelAdmin] | None = None,
     ) -> ModelConfig:
         """
         Register a model with the admin interface.
@@ -229,10 +248,28 @@ class MatrixAdmin:
             exclude=exclude,
             list_display=list_display,
             searchable_fields=searchable_fields,
+            filter_fields=filter_fields,
             ordering=ordering,
             icon=icon,
             readonly=readonly,
+            permissions=permissions,
+            row_scope=row_scope,
+            actions=actions,
+            field_overrides=field_overrides,
+            widgets=widgets,
+            query_options=query_options,
+            eager_load=eager_load,
+            detail_panels=detail_panels,
+            dashboard_cards=dashboard_cards,
+            menu_group=menu_group,
+            menu_label=menu_label,
+            menu_order=menu_order,
+            admin=admin,
         )
+
+    def add_view(self, admin: ModelAdmin | type[ModelAdmin]) -> ModelConfig:
+        """Register a model using a ``ModelAdmin`` subclass or instance."""
+        return self.registry.add_view(admin)
 
     def get_registry(self) -> AdminRegistry:
         """Get the model registry."""

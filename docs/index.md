@@ -1,59 +1,41 @@
-# Welcome to the Matrix
+# FastAPI Matrix Admin
 
-<div align="center">
-  <h1>⚡ FastAPI Matrix Admin</h1>
-  <p>
-    <strong>The most striking admin panel for FastAPI.</strong><br>
-    Terminal-style cyberpunk aesthetics meet production-ready functionality.
-  </p>
-  <p>
-    <a href="https://badge.fury.io/py/fastapi-matrix-admin"><img src="https://badge.fury.io/py/fastapi-matrix-admin.svg" alt="PyPI version"></a>
-    <a href="https://github.com/rasinmuhammed/fastapi-matrix-admin/actions/workflows/tests.yml"><img src="https://github.com/rasinmuhammed/fastapi-matrix-admin/workflows/Tests/badge.svg" alt="Tests"></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  </p>
-</div>
+FastAPI Matrix Admin is the FastAPI-native admin for async SQLAlchemy teams who want an interface that feels deliberate, memorable, and operationally serious.
 
----
+## Why it wins attention
 
-## 🕶️ Why Matrix Admin?
+- strong Matrix visual identity
+- pure Python integration path
+- FastAPI + SQLAlchemy focus instead of generic ORM sprawl
+- explicit permissions and row scoping
+- a simple default and a deeper escape hatch
 
-Most admin panels are boring. They look like spreadsheets. 
+## Why teams keep it
 
-**FastAPI Matrix Admin** is different. It's built for developers who live in the terminal. It's designed to make your backend look as powerful as it feels.
+- `admin.register()` gives you a quick first admin
+- `ModelAdmin` gives you durable control for real applications
+- the request-aware model makes tenant scoping and operator workflows much easier to express
 
-### Core Philosophy
+## Start here
 
-1.  **Aesthetics Matter**: A tool you enjoy looking at is a tool you enjoy using. The "Matrix" theme isn't just a skin; it's an identity.
-2.  **Zero Friction**: One line of code [`admin.auto_discover(Base)`] should be enough to start.
-3.  **No Node.js**: We love JavaScript, but not in our Python backend build pipeline. This is pure Python.
-4.  **Bulletproof**: Production-ready security (CSP, CSRF, Signed URLs) and performance (Async, Eager Loading).
+- [Getting Started](guide/getting-started.md)
+- [AI Assistants](ai-assistants.md)
+- [Configuration](guide/configuration.md)
+- [Comparison](comparison.md)
+- [FAQ](faq.md)
 
----
+## Common use cases
 
-## 🚀 Key Features
+- internal operations consoles
+- SaaS backoffice dashboards
+- admin tools for support teams
+- tenant-safe CRUD for SQLAlchemy applications
 
-- **🎨 Matrix UI Theme**: Terminal-style monospace fonts, neon glow effects, and a dark mode that actually looks reliable.
-- **🔍 Smart Auto-Discovery**: Automatically finds all your SQLAlchemy models and builds a CRUD interface.
-- **🔮 Smart Relationships**: Foreign keys? Many-to-One? We detect them and render searchable dropdowns automatically.
-- **⚡ Supercharged Performance**: Built on `SQLAlchemy` async operations with intelligent N+1 query prevention.
-- **🛡️ Enterprise Security**: Built-in support for Argon2 hashing, rate limiting, and secure session management.
+## Project direction
 
----
+Matrix Admin is being optimized for the current age of AI-assisted development. That means:
 
-## 🏁 Quick Start
-
-```python
-from fastapi import FastAPI
-from fastapi_matrix_admin import MatrixAdmin
-from settings import engine, Base
-
-app = FastAPI()
-
-# 1. Initialize
-admin = MatrixAdmin(app, engine=engine, secret_key="secure-key")
-
-# 2. Revolutions
-admin.auto_discover(Base)
-```
-
-[Get Started →](guide/getting-started.md){ .md-button .md-button--primary } [View Features →](features.md){ .md-button }
+- better docs for coding assistants
+- explicit APIs that are easy to integrate correctly
+- stronger reference material for search, LLMs, and IDE assistants
+- a visual experience that makes the library instantly recognizable

@@ -1,5 +1,5 @@
 """
-Example Demo Application for FastAPI Shadcn Admin
+Example demo application for FastAPI Matrix Admin.
 
 Run with: python -m examples.demo
 Open: http://localhost:8000/admin
@@ -75,7 +75,7 @@ class Article(BaseModel):
 # --- Create FastAPI App ---
 
 app = FastAPI(
-    title="FastAPI Shadcn Admin Demo",
+    title="FastAPI Matrix Admin Demo",
     description="Example application demonstrating the admin interface",
 )
 
@@ -110,7 +110,7 @@ admin.register(
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to FastAPI Shadcn Admin Demo",
+        "message": "Welcome to FastAPI Matrix Admin Demo",
         "admin_url": "/admin",
     }
 

@@ -1,6 +1,6 @@
-# 🔥 Revolutionary Features
+# Features
 
-FastAPI Matrix Admin isn't just a pretty face. It packs a punch with features designed for power users.
+FastAPI Matrix Admin is built for FastAPI developers who want a strong default and room to grow into more advanced workflows.
 
 ## 🔮 Smart Selects
 
@@ -28,10 +28,7 @@ Sidebar filters are generated automatically based on your model configuration.
 ```python
 admin.register(
     Product,
-    ModelConfig(
-        model=Product,
-        filter_fields=["available", "category", "__price__gte"]
-    )
+    filter_fields=["available", "created_at", "price"],
 )
 ```
 
@@ -57,7 +54,7 @@ Need to dump data?
 - **Streaming Response**: We stream data row-by-row, so you can export 100,000 users without blowing up your server RAM.
 - **Filter-Aware**: Exports exactly what you see on the screen (current search + active filters).
 
-## 🛡️ Bulletproof Security
+## Permissions And Security
 
 We take security seriously.
 

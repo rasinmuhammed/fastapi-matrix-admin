@@ -1,5 +1,5 @@
 site_name: FastAPI Matrix Admin
-site_description: The most striking admin panel for FastAPI. Terminal-style cyberpunk aesthetics.
+site_description: FastAPI-native admin for async SQLAlchemy teams.
 site_url: https://rasinmuhammed.github.io/fastapi-matrix-admin/
 repo_url: https://github.com/rasinmuhammed/fastapi-matrix-admin
 repo_name: rasinmuhammed/fastapi-matrix-admin
@@ -57,15 +57,26 @@ plugins:
 
 nav:
   - Home: index.md
+  - AI Assistants: ai-assistants.md
   - Guide:
       - Getting Started: guide/getting-started.md
       - Configuration: guide/configuration.md
-      - Authentication: guide/authentication.md
+      - Migration Notes: guide/migration.md
+      - Integrations: guide/integrations.md
+  - Recipes:
+      - Auth And Audit: recipes/auth-and-audit.md
+      - Multi-Tenant Scoping: recipes/multi-tenant-scoping.md
+      - Actions And Ops: recipes/actions-and-ops.md
+      - AI-Friendly Integration: recipes/ai-friendly-integration.md
   - Features: features.md
+  - Comparison: comparison.md
+  - FAQ: faq.md
   - API Reference: api.md
   - Contributing: contributing.md
 
 extra:
+  generator: false
+  homepage: https://rasinmuhammed.github.io/fastapi-matrix-admin/
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/rasinmuhammed

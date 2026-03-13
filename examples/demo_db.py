@@ -104,7 +104,7 @@ class Content(BaseModel):
 # --- Create FastAPI App ---
 
 app = FastAPI(
-    title="FastAPI Shadcn Admin - Production Demo",
+    title="FastAPI Matrix Admin - Production Demo",
     description="Full-featured admin with database integration",
 )
 
@@ -184,7 +184,7 @@ async def shutdown():
 @app.get("/")
 async def root():
     return {
-        "message": "FastAPI Shadcn Admin - Production Demo",
+        "message": "FastAPI Matrix Admin - Production Demo",
         "features": [
             "✅ Real database integration (SQLite)",
             "✅ Full CRUD operations",

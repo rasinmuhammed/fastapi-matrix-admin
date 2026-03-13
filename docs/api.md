@@ -1,58 +1,93 @@
 # API Reference
 
-Complete class and function reference.
+## `MatrixAdmin`
 
-## Core
+Main entrypoint for integrating the admin into a FastAPI app.
 
-### MatrixAdmin
+### Constructor
 
-`fastapi_matrix_admin.MatrixAdmin`
+```python
+MatrixAdmin(
+    app,
+    secret_key,
+    *,
+    engine=None,
+    title="Admin",
+    prefix="/admin",
+    templates_dir=None,
+    add_csp_middleware=True,
+    max_recursion_depth=5,
+    auth_model=None,
+    audit_model=None,
+    demo_mode=False,
+    secure_cookies=None,
+)
+```
 
-The main class that initializes the admin interface.
+### Key arguments
 
-**Arguments**:
+- `engine`: async SQLAlchemy engine for database-backed admin features
+- `auth_model`: admin user model used for login and permission checks
+- `audit_model`: concrete audit log model to persist change history
+- `secure_cookies`: override secure-cookie behavior directly; otherwise use `ADMIN_SECURE_COOKIES`
 
-- `app` (FastAPI): Your FastAPI application instance.
-- `secret_key` (str): Secret key for signing sessions and URLs. Must be kept secret in production.
-- `engine` (AsyncEngine, optional): SQLAlchemy async engine. Required if using database features.
-- `title` (str, optional): Admin panel title. Defaults to "Admin".
-- `prefix` (str, optional): URL prefix. Defaults to "/admin".
-- `auth_model` (Type[AdminUser], optional): User model for authentication.
+### Key methods
 
-**Methods**:
+- `register(model, **options)`: quick registration path
+- `add_view(ModelAdminSubclass)`: advanced registration path
+- `auto_discover(Base, include=None, exclude=None)`: register all supported declarative models
+- `get_session_dependency()`: expose the admin session dependency for custom routes
 
-- `register(model, config)`: Register a single model manually.
-- `auto_discover(base)`: Automatically find and register all models inheriting from the given SQLAlchemy base.
+## `ModelConfig`
 
-### ModelConfig
+Stored configuration for a registered model.
 
-`fastapi_matrix_admin.core.registry.ModelConfig`
+Notable fields:
 
-Configuration dataclass for registered models.
+- `list_display`
+- `searchable_fields`
+- `filter_fields`
+- `ordering`
+- `permissions`
+- `row_scope`
+- `actions`
+- `field_overrides`
+- `widgets`
+- `eager_load`
+- `detail_panels`
+- `menu_label`
+- `menu_order`
 
-**Attributes**:
+## `ModelAdmin`
 
-- `model`: The SQLAlchemy model class.
-- `list_display` (list[str]): Fields to show in the list table.
-- `searchable_fields` (list[str]): Fields to include in search queries.
-- `filter_fields` (list[str]): Fields to generate sidebar filters for.
-- `icon` (str): Lucide icon name (e.g., "user", "file").
-- `ordering` (list[str]): Default sorting (e.g., `["-id"]`).
-- `readonly` (bool): If True, disables Create/Update/Delete actions.
+Declarative advanced configuration for a model. Useful when you need reusable admin behavior or more than a handful of `register()` options.
 
-## Utilities
+Example:
 
-### URLSigner
+```python
+class UserAdmin(ModelAdmin):
+    model = User
+    list_display = ["id", "email", "is_active"]
+    permissions = {"view": ["*"], "edit": ["admin"]}
+```
 
-`fastapi_matrix_admin.core.security.URLSigner`
+## `AdminAction`
 
-Helper to sign and verify URLs to prevent tampering.
+Defines a custom admin action.
 
-- `sign(url)`: Returns a signed URL.
-- `verify(token)`: Verifies signatures.
+Fields:
 
-### AuditLogger
+- `name`
+- `label`
+- `handler`
+- `confirmation_message`
+- `bulk`
+- `visible`
 
-`fastapi_matrix_admin.audit.models.AuditLogger`
+## `DetailPanel`
 
-Handles creation of audit log entries for all admin actions.
+Adds custom detail content to edit/detail pages.
+
+## `DashboardCard`
+
+Adds custom dashboard content from application-aware renderers.

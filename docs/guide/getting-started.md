@@ -1,82 +1,99 @@
 # Getting Started
 
-Ready to enter the Matrix? Let's get your admin panel running in under 2 minutes.
-
-## 📦 Installation
-
-This is a pure Python package. No Node.js, no `npm`, no build steps.
+## Install
 
 ```bash
 pip install fastapi-matrix-admin
 ```
 
-> **Note**: We recommend using `uvicorn[standard]` for production-grade async performance.
-
-## 🔌 Integration
-
-### 1. Basic Setup
-
-Add `MatrixAdmin` to your FastAPI app. You need an `AsyncEngine` from SQLAlchemy 1.4+.
+## Basic setup
 
 ```python
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
+
 from fastapi_matrix_admin import MatrixAdmin
 
 app = FastAPI()
-engine = create_async_engine("sqlite+aiosqlite:///db.sqlite3")
+engine = create_async_engine("sqlite+aiosqlite:///./app.db")
 
 admin = MatrixAdmin(
     app,
     engine=engine,
-    secret_key="your-super-secret-key-must-be-long",
-    title="Matrix HQ"
+    secret_key="change-me-in-production",
+    title="Operations",
 )
 ```
 
-### 2. Registering Models
+## Register models
 
-You have two choices: **The Red Pill** (Manual) or **The Blue Pill** (Auto-Magic).
-
-#### The Blue Pill (Auto-Discovery) 💊
-
-Simply pass your SQLAlchemy `Base` class, and we'll find everything.
+### Fast path
 
 ```python
-from models import Base
-
-# Finds all models strictly inheriting from Base
 admin.auto_discover(Base)
 ```
 
-#### The Red Pill (Manual Registration) 💊
-
-For total control over icons, visible columns, and filters.
+### Explicit path
 
 ```python
-from fastapi_matrix_admin.core.registry import ModelConfig
-from models import User
-
 admin.register(
     User,
-    ModelConfig(
-        model=User,
-        icon="shield",  # Lucide icon name
-        list_display=["id", "username", "email", "is_active"],
-        searchable_fields=["username", "email"],
-        filter_fields=["is_active"]
-    )
+    list_display=["id", "email", "is_active"],
+    searchable_fields=["email"],
+    filter_fields=["is_active", "created_at"],
 )
 ```
 
-## 🏃‍♂️ Running It
+### Advanced path with `ModelAdmin`
 
-Start your FastAPI app as usual:
+```python
+from fastapi_matrix_admin import ModelAdmin
+
+
+class UserAdmin(ModelAdmin):
+    model = User
+    menu_label = "Users"
+    list_display = ["id", "email", "is_active", "created_at"]
+    searchable_fields = ["email"]
+    filter_fields = ["is_active", "created_at"]
+    permissions = {
+        "view": ["*"],
+        "create": ["admin"],
+        "edit": ["admin"],
+        "delete": ["admin"],
+        "export": ["admin"],
+    }
+
+    @staticmethod
+    def row_scope(*, request, query, session, user):
+        if user and not user.is_superuser:
+            return query.where(User.organization_id == user.organization_id)
+        return query
+
+
+admin.add_view(UserAdmin)
+```
+
+## Authentication
+
+If you pass `auth_model=YourAdminUserModel`, admin routes require authenticated users. Permissions are evaluated from each model config.
+
+```python
+admin = MatrixAdmin(
+    app,
+    engine=engine,
+    secret_key="change-me",
+    auth_model=AdminUser,
+    audit_model=AdminAuditLog,
+)
+```
+
+Set `ADMIN_SECURE_COOKIES=true` in production so session cookies are marked `Secure`.
+
+## Run locally
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Navigate to `http://localhost:8000/admin`. 
-
-**Welcome to the Matrix.** 🕶️
+Open `http://localhost:8000/admin`.

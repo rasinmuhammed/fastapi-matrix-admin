@@ -12,12 +12,17 @@ from __future__ import annotations
 import math
 import platform
 import psutil
+import os
 from datetime import datetime, timedelta
 from typing import Any, TYPE_CHECKING, Callable, AsyncGenerator
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
-from starlette.status import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from starlette.status import (
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+)
 
 if TYPE_CHECKING:
     from fastapi_matrix_admin.core.registry import AdminRegistry
@@ -28,11 +33,18 @@ if TYPE_CHECKING:
 from fastapi_matrix_admin.core.crud import CRUDBase
 from fastapi_matrix_admin.core.integrator import FieldDefinition, FieldType
 from fastapi_matrix_admin.audit.models import AuditLogger
+from fastapi_matrix_admin.auth.models import PermissionChecker
+from fastapi_matrix_admin.auth.service import AuthService
 from fastapi_matrix_admin.core.rate_limiter import RateLimiter
 
 
 def extract_sqlalchemy_fields(
-    model: Any, exclude: list[str] | None = None, include: list[str] | None = None
+    model: Any,
+    exclude: list[str] | None = None,
+    include: list[str] | None = None,
+    registry: "AdminRegistry | None" = None,
+    field_overrides: dict[str, dict[str, Any]] | None = None,
+    widgets: dict[str, str] | None = None,
 ) -> list[FieldDefinition]:
     """
     Extract fields from a SQLAlchemy model and convert to FieldDefinition objects.
@@ -94,8 +106,22 @@ def extract_sqlalchemy_fields(
             elif hasattr(column.type, "__visit_name__"):
                 if column.type.__visit_name__ == "text":
                     field_type = FieldType.TEXTAREA
+                elif column.type.__visit_name__ in ("json", "jsonb"):
+                    field_type = FieldType.JSON
                 elif column.type.__visit_name__ in ("date", "datetime"):
                     field_type = FieldType.DATETIME
+
+            if registry and target_model:
+                for config in registry.all():
+                    if (
+                        hasattr(config.model, "__table__")
+                        and config.model.__table__.name == target_model
+                    ):
+                        target_model = config.name
+                        break
+
+            if widgets and widgets.get(field_name) == "json":
+                field_type = FieldType.JSON
 
             # Create FieldDefinition
             field_def = FieldDefinition(
@@ -112,10 +138,31 @@ def extract_sqlalchemy_fields(
                 placeholder=None,
                 target_model=target_model,
             )
+            overrides = (field_overrides or {}).get(field_name, {})
+            for key, value in overrides.items():
+                if hasattr(field_def, key):
+                    setattr(field_def, key, value)
 
             fields.append(field_def)
 
     return fields
+
+
+def model_to_dict(model: Any, exclude: set[str] | None = None) -> dict[str, Any]:
+    """Serialize a SQLAlchemy or Pydantic model into a plain dict."""
+    exclude = exclude or set()
+    data: dict[str, Any] = {}
+    if hasattr(model, "__table__"):
+        for column in model.__table__.columns:
+            if column.name in exclude:
+                continue
+            value = getattr(model, column.name, None)
+            if isinstance(value, datetime):
+                value = value.isoformat()
+            data[column.name] = value
+    elif hasattr(model, "model_dump"):
+        data = model.model_dump(exclude=exclude)
+    return data
 
 
 def create_admin_router(
@@ -131,6 +178,7 @@ def create_admin_router(
     audit_logger: AuditLogger | None = None,
     auth_model: Any | None = None,
     demo_mode: bool = False,
+    secure_cookies: bool | None = None,
 ) -> APIRouter:
     # Initialize rate limiter (e.g., 5 login attempts per minute)
     login_limiter = RateLimiter(rate=5, per=60)
@@ -150,13 +198,106 @@ def create_admin_router(
         Configured APIRouter
     """
     router = APIRouter(tags=["admin"])
+    auth_service = (
+        AuthService(signer, auth_model)
+        if auth_model is not None and session_dependency is not None
+        else None
+    )
+    secure_cookie_flag = (
+        secure_cookies
+        if secure_cookies is not None
+        else os.getenv("ADMIN_SECURE_COOKIES", "false").lower() == "true"
+    )
+
+    async def get_current_user(
+        request: Request,
+        session: "AsyncSession" | None,
+    ) -> Any | None:
+        if not auth_service or not session:
+            return None
+        return await auth_service.get_current_user(request, session)
+
+    async def require_user(
+        request: Request,
+        session: "AsyncSession" | None,
+    ) -> Any | None:
+        if not auth_service:
+            return None
+        if session is None:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Authentication requires a database session.",
+            )
+        user = await auth_service.get_current_user(request, session)
+        if user is None:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Cookie"},
+            )
+        return user
+
+    async def enforce_permission(
+        request: Request,
+        session: "AsyncSession" | None,
+        model_config: Any | None,
+        permission: str,
+    ) -> Any | None:
+        if model_config is None:
+            return await require_user(request, session) if auth_service else None
+
+        if not auth_service:
+            return None
+
+        user = await require_user(request, session)
+        checker = PermissionChecker(user, model_config.permissions)
+        allowed = getattr(checker, f"can_{permission}", checker.can_view)()
+        if not allowed:
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN,
+                detail=f"Not allowed to {permission} {model_config.name}",
+            )
+        return user
+
+    def scoped_query_transform(
+        model_config: Any, request: Request, session: Any, user: Any
+    ):
+        if not model_config or not model_config.row_scope:
+            return None
+
+        def _apply(query: Any) -> Any:
+            return model_config.row_scope(
+                request=request, query=query, session=session, user=user
+            )
+
+        return _apply
+
+    def visible_actions(model_config: Any, request: Request, user: Any) -> list[Any]:
+        actions = []
+        for action in model_config.actions:
+            if action.visible is None or action.visible(request=request, user=user):
+                actions.append(action)
+        return actions
+
+    def render_action_result(result: Any, fallback_url: str) -> Any:
+        if isinstance(result, (HTMLResponse, JSONResponse, RedirectResponse)):
+            return result
+        if isinstance(result, dict):
+            return JSONResponse(result)
+        return RedirectResponse(url=fallback_url, status_code=303)
 
     def get_common_context(request: Request) -> dict[str, Any]:
         """Get common template context."""
         return {
             "request": request,
             "admin_title": title,
-            "models": registry.get_all(),  # Get model names, not ModelConfig objects
+            "models": sorted(
+                registry.all(),
+                key=lambda config: (
+                    config.menu_order,
+                    config.menu_label or config.name,
+                ),
+            ),
             "csp_nonce": getattr(request.state, "csp_nonce", ""),
         }
 
@@ -269,7 +410,7 @@ def create_admin_router(
             value=session_token,
             httponly=True,
             samesite="lax",
-            secure=True,  # Require HTTPS (Matrix Admin standard)
+            secure=secure_cookie_flag,
             max_age=3600 * 24 * 30 if session_data.expires_at else 3600 * 24,
         )
 
@@ -306,6 +447,8 @@ def create_admin_router(
         """Admin dashboard with analytics."""
         from datetime import datetime
         from sqlalchemy import func, select
+
+        current_user = await enforce_permission(request, session, None, "view")
 
         # Get registered models
         registered_models = registry.get_all()  # Returns list of model names
@@ -391,6 +534,13 @@ def create_admin_router(
         # TODO: Query audit log if available
 
         # System KPIs (Observer Module)
+        try:
+            boot_time = datetime.fromtimestamp(psutil.boot_time()).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        except (PermissionError, OSError):
+            boot_time = "Unavailable"
+
         system_stats = {
             "platform": f"{platform.system()} {platform.release()}",
             "processor": platform.processor(),
@@ -398,9 +548,7 @@ def create_admin_router(
             "ram_usage": psutil.virtual_memory().percent,
             "ram_total": f"{round(psutil.virtual_memory().total / (1024**3), 2)} GB",
             "disk_usage": psutil.disk_usage("/").percent,
-            "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "boot_time": boot_time,
         }
 
         # Add System Stats to KPIs
@@ -428,6 +576,7 @@ def create_admin_router(
             "chart_data": chart_data,
             "recent_activity": recent_activity,
             "system_stats": system_stats,  # Pass full stats if needed
+            "current_user": current_user,
         }
 
         return templates.TemplateResponse("pages/index.html", context)
@@ -453,6 +602,11 @@ def create_admin_router(
             raise HTTPException(
                 status_code=HTTP_403_FORBIDDEN, detail="Model not registered"
             )
+
+        current_user = await enforce_permission(request, session, model_config, "view")
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
 
         # Get field definitions for column headers
         # For SQLAlchemy models, skip schema walking (use list_display directly)
@@ -480,7 +634,11 @@ def create_admin_router(
             all_fields = []
             if hasattr(model_config.model, "__tablename__"):
                 all_fields = extract_sqlalchemy_fields(
-                    model_config.model, include=model_config.filter_fields
+                    model_config.model,
+                    include=model_config.filter_fields,
+                    registry=registry,
+                    field_overrides=model_config.field_overrides,
+                    widgets=model_config.widgets,
                 )
             else:
                 all_fields = walker.walk(
@@ -521,7 +679,10 @@ def create_admin_router(
                 search_fields=model_config.searchable_fields,
                 filters=filters,
                 order_by=model_config.ordering,
-                load_relationships=load_relationships,
+                load_relationships=sorted(
+                    set(load_relationships + (model_config.eager_load or []))
+                ),
+                query_transform=query_transform,
             )
         else:
             # Pydantic/No-DB model - empty or mock data
@@ -533,6 +694,13 @@ def create_admin_router(
         delete_url_template = router.url_path_for(
             "admin:delete", model=model, id="__id__"
         )
+        delete_tokens = {
+            str(getattr(row, "id", "")): signer.sign(
+                {"model": model, "action": "delete"}
+            )
+            for row in rows_data
+            if getattr(row, "id", None) is not None
+        }
 
         context = {
             **get_common_context(request),
@@ -550,6 +718,15 @@ def create_admin_router(
             "delete_url_template": delete_url_template,
             "active_filters": filters,
             "filter_definitions": filter_definitions,
+            "current_user": current_user,
+            "actions": visible_actions(model_config, request, current_user),
+            "delete_tokens": delete_tokens,
+            "bulk_actions": ["bulk_delete"]
+            + [
+                action.name
+                for action in visible_actions(model_config, request, current_user)
+                if action.bulk
+            ],
         }
 
         return templates.TemplateResponse("pages/list.html", context)
@@ -568,6 +745,13 @@ def create_admin_router(
             model_config = registry.validate_model_access(model)
         except Exception:
             raise HTTPException(status_code=403, detail="Model not registered")
+
+        current_user = await enforce_permission(
+            request, session, model_config, "export"
+        )
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
 
         # Reuse filter logic
         reserved_params = {"page", "per_page", "search"}
@@ -615,6 +799,7 @@ def create_admin_router(
                         search_fields=model_config.searchable_fields,
                         filters=filters,
                         order_by=model_config.ordering,
+                        query_transform=query_transform,
                     )
 
                     if not rows:
@@ -642,7 +827,13 @@ def create_admin_router(
     # ==================== Create View ====================
 
     @router.get("/{model}/create", response_class=HTMLResponse, name="admin:create")
-    async def create_view(request: Request, model: str):
+    async def create_view(
+        request: Request,
+        model: str,
+        session: "AsyncSession" = (
+            Depends(session_dependency) if session_dependency else None
+        ),
+    ):
         """Show create form for a model."""
         try:
             model_config = registry.validate_model_access(model)
@@ -656,6 +847,10 @@ def create_admin_router(
                 status_code=HTTP_403_FORBIDDEN, detail="Model is read-only"
             )
 
+        current_user = await enforce_permission(
+            request, session, model_config, "create"
+        )
+
         # Get form fields - use SQLAlchemy inspector for SQLAlchemy models
         if hasattr(model_config.model, "__tablename__"):
             # SQLAlchemy model
@@ -663,6 +858,9 @@ def create_admin_router(
                 model_config.model,
                 exclude=model_config.exclude,
                 include=model_config.fields,
+                registry=registry,
+                field_overrides=model_config.field_overrides,
+                widgets=model_config.widgets,
             )
         else:
             # Pydantic model
@@ -686,6 +884,9 @@ def create_admin_router(
             "record_id": None,
             "fragment_url": fragment_url,
             "csrf_token": signer.sign({"action": "create", "model": model}),
+            "current_user": current_user,
+            "detail_panels": model_config.detail_panels,
+            "delete_token": signer.sign({"model": model, "action": "delete"}),
         }
 
         return templates.TemplateResponse("pages/edit.html", context)
@@ -713,6 +914,11 @@ def create_admin_router(
                 status_code=HTTP_403_FORBIDDEN, detail="Model is read-only"
             )
 
+        current_user = await enforce_permission(
+            request, session, model_config, "create"
+        )
+        scoped_query_transform(model_config, request, session, current_user)
+
         form_data = await request.form()
 
         # Validate CSRF token
@@ -735,7 +941,12 @@ def create_admin_router(
 
             # Convert string values to appropriate types based on model
             create_data = {}
-            fields = extract_sqlalchemy_fields(model_config.model)
+            fields = extract_sqlalchemy_fields(
+                model_config.model,
+                registry=registry,
+                field_overrides=model_config.field_overrides,
+                widgets=model_config.widgets,
+            )
             for field in fields:
                 if field.name in raw_data:
                     value = raw_data[field.name]
@@ -755,20 +966,28 @@ def create_admin_router(
                         create_data[field.name] = int(value) if value else None
                     elif field.field_type == FieldType.FLOAT and isinstance(value, str):
                         create_data[field.name] = float(value) if value else None
+                    elif field.field_type == FieldType.JSON and isinstance(value, str):
+                        import json
+
+                        create_data[field.name] = json.loads(value) if value else None
                     else:
                         create_data[field.name] = value if value != "" else None
 
             try:
-                await crud.create(session, obj_in=create_data)
+                created_record = await crud.create(session, obj_in=create_data)
 
                 # Audit Log
                 if audit_logger:
-                    # TODO: specific user info if auth integrated
                     await audit_logger.log_create(
                         session,
                         model_name=model,
-                        record_id="new",  # Ideally get ID from created obj
-                        record_data=create_data,
+                        record_id=str(getattr(created_record, "id", "new")),
+                        record_data=model_to_dict(
+                            created_record,
+                            exclude={"password_hash", "totp_secret"},
+                        ),
+                        user_id=getattr(current_user, "id", None),
+                        username=getattr(current_user, "username", None),
                         ip_address=request.client.host if request.client else None,
                     )
 
@@ -809,6 +1028,9 @@ def create_admin_router(
                 model_config.model,
                 exclude=model_config.exclude,
                 include=model_config.fields,
+                registry=registry,
+                field_overrides=model_config.field_overrides,
+                widgets=model_config.widgets,
             )
         else:
             # Pydantic model
@@ -822,7 +1044,18 @@ def create_admin_router(
         values = {"id": id}
         if session and hasattr(model_config.model, "__tablename__"):
             crud = CRUDBase(model_config.model)
-            record = await crud.get(session, id)
+            current_user = await enforce_permission(
+                request, session, model_config, "view"
+            )
+            query_transform = scoped_query_transform(
+                model_config, request, session, current_user
+            )
+            record = await crud.get(
+                session,
+                id,
+                query_transform=query_transform,
+                load_relationships=model_config.eager_load,
+            )
 
             if not record:
                 raise HTTPException(
@@ -849,6 +1082,10 @@ def create_admin_router(
             "record_id": id,
             "fragment_url": fragment_url,
             "csrf_token": signer.sign({"action": "update", "model": model, "id": id}),
+            "current_user": locals().get("current_user"),
+            "detail_panels": model_config.detail_panels,
+            "record": locals().get("record"),
+            "delete_token": signer.sign({"model": model, "action": "delete"}),
         }
 
         return templates.TemplateResponse("pages/edit.html", context)
@@ -875,6 +1112,11 @@ def create_admin_router(
                 status_code=HTTP_403_FORBIDDEN, detail="Model is read-only"
             )
 
+        current_user = await enforce_permission(request, session, model_config, "edit")
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
+
         form_data = await request.form()
 
         # Validate CSRF token
@@ -897,7 +1139,12 @@ def create_admin_router(
 
             # Convert string values to appropriate types based on model
             update_data = {}
-            fields = extract_sqlalchemy_fields(model_config.model)
+            fields = extract_sqlalchemy_fields(
+                model_config.model,
+                registry=registry,
+                field_overrides=model_config.field_overrides,
+                widgets=model_config.widgets,
+            )
             for field in fields:
                 if field.name in raw_data:
                     value = raw_data[field.name]
@@ -917,11 +1164,34 @@ def create_admin_router(
                         update_data[field.name] = int(value) if value else None
                     elif field.field_type == FieldType.FLOAT and isinstance(value, str):
                         update_data[field.name] = float(value) if value else None
+                    elif field.field_type == FieldType.JSON and isinstance(value, str):
+                        import json
+
+                        update_data[field.name] = json.loads(value) if value else None
                     else:
                         update_data[field.name] = value if value != "" else None
 
             try:
-                updated_record = await crud.update(session, id=id, obj_in=update_data)
+                existing_record = await crud.get(
+                    session,
+                    id,
+                    query_transform=query_transform,
+                    load_relationships=model_config.eager_load,
+                )
+                old_data = (
+                    model_to_dict(
+                        existing_record, exclude={"password_hash", "totp_secret"}
+                    )
+                    if existing_record
+                    else {}
+                )
+
+                updated_record = await crud.update(
+                    session,
+                    id=id,
+                    obj_in=update_data,
+                    query_transform=query_transform,
+                )
                 if not updated_record:
                     raise HTTPException(
                         status_code=HTTP_404_NOT_FOUND, detail="Record not found"
@@ -933,8 +1203,13 @@ def create_admin_router(
                         session,
                         model_name=model,
                         record_id=id,
-                        old_data={},  # TODO: Fetch old data for diff
-                        new_data=update_data,
+                        old_data=old_data,
+                        new_data=model_to_dict(
+                            updated_record,
+                            exclude={"password_hash", "totp_secret"},
+                        ),
+                        user_id=getattr(current_user, "id", None),
+                        username=getattr(current_user, "username", None),
                         ip_address=request.client.host if request.client else None,
                     )
 
@@ -985,12 +1260,29 @@ def create_admin_router(
                 status_code=HTTP_403_FORBIDDEN, detail="Model is read-only"
             )
 
+        current_user = await enforce_permission(
+            request, session, model_config, "delete"
+        )
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
+
         # Delete record from database
         if session and hasattr(model_config.model, "__tablename__"):
             crud = CRUDBase(model_config.model)
 
             try:
-                deleted = await crud.delete(session, id=id)
+                existing_record = await crud.get(
+                    session,
+                    id,
+                    query_transform=query_transform,
+                    load_relationships=model_config.eager_load,
+                )
+                deleted = await crud.delete(
+                    session,
+                    id=id,
+                    query_transform=query_transform,
+                )
                 if not deleted:
                     raise HTTPException(
                         status_code=HTTP_404_NOT_FOUND, detail="Record not found"
@@ -1002,7 +1294,12 @@ def create_admin_router(
                         session,
                         model_name=model,
                         record_id=id,
-                        record_data={},
+                        record_data=model_to_dict(
+                            existing_record,
+                            exclude={"password_hash", "totp_secret"},
+                        ),
+                        user_id=getattr(current_user, "id", None),
+                        username=getattr(current_user, "username", None),
                         ip_address=request.client.host if request.client else None,
                     )
 
@@ -1018,11 +1315,138 @@ def create_admin_router(
 
     # ==================== Polymorphic Fragment Loading ====================
 
+    @router.get("/api/search/{model}", name="admin:search_related")
+    async def search_related(
+        request: Request,
+        model: str,
+        q: str = Query(""),
+        session: "AsyncSession" = (
+            Depends(session_dependency) if session_dependency else None
+        ),
+    ):
+        """Search related models for relationship inputs."""
+        if not session:
+            return JSONResponse([])
+
+        try:
+            model_config = registry.validate_model_access(model)
+        except Exception:
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN,
+                detail="Model not registered",
+            )
+
+        current_user = await enforce_permission(request, session, model_config, "view")
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
+        crud = CRUDBase(model_config.model)
+
+        rows, _ = await crud.list(
+            session,
+            page=1,
+            per_page=10,
+            search=q,
+            search_fields=model_config.searchable_fields or ["id"],
+            order_by=model_config.ordering,
+            query_transform=query_transform,
+        )
+
+        items = []
+        for row in rows:
+            label = (
+                row.__admin_repr__()
+                if hasattr(row, "__admin_repr__")
+                else getattr(row, "name", None)
+                or getattr(row, "title", None)
+                or getattr(row, "email", None)
+                or f"{model_config.name} #{getattr(row, 'id', '')}"
+            )
+            items.append({"id": getattr(row, "id", ""), "label": str(label)})
+        return JSONResponse(items)
+
+    @router.post("/{model}/actions/{action_name}", name="admin:run_action")
+    async def run_action(
+        request: Request,
+        model: str,
+        action_name: str,
+        session: "AsyncSession" = (
+            Depends(session_dependency) if session_dependency else None
+        ),
+    ):
+        """Run a bulk or custom action for a model."""
+        if not session:
+            raise HTTPException(
+                status_code=400, detail="Bulk actions require a database session"
+            )
+
+        try:
+            model_config = registry.validate_model_access(model)
+        except Exception:
+            raise HTTPException(
+                status_code=HTTP_403_FORBIDDEN,
+                detail="Model not registered",
+            )
+
+        current_user = await enforce_permission(request, session, model_config, "edit")
+        query_transform = scoped_query_transform(
+            model_config, request, session, current_user
+        )
+        form_data = await request.form()
+        selected_ids = form_data.getlist("selected_ids")
+        crud = CRUDBase(model_config.model)
+
+        if action_name == "bulk_delete":
+            deleted = await crud.bulk_delete(
+                session,
+                ids=selected_ids,
+                query_transform=query_transform,
+            )
+            if audit_logger and deleted:
+                await audit_logger.log_delete(
+                    session,
+                    model_name=model,
+                    record_id="bulk",
+                    record_data={"deleted_ids": selected_ids, "count": deleted},
+                    user_id=getattr(current_user, "id", None),
+                    username=getattr(current_user, "username", None),
+                    ip_address=request.client.host if request.client else None,
+                )
+            await session.commit()
+            return RedirectResponse(
+                url=str(request.url_for("admin:list", model=model)),
+                status_code=303,
+            )
+
+        action = next(
+            (item for item in model_config.actions if item.name == action_name), None
+        )
+        if action is None:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND, detail="Action not found"
+            )
+
+        result = await action.handler(
+            request=request,
+            session=session,
+            model=model_config.model,
+            ids=selected_ids,
+            user=current_user,
+            config=model_config,
+        )
+        await session.commit()
+        return render_action_result(
+            result, str(request.url_for("admin:list", model=model))
+        )
+
     @router.get("/fragments", response_class=HTMLResponse, name="admin:load_fragment")
     async def load_fragment(
         request: Request,
         token: str = Query(...),
         subtype: str = Query(None),
+        session: "AsyncSession" = (
+            Depends(session_dependency) if session_dependency else None
+        ),
     ):
         """
         Load form fields for a polymorphic subtype.
@@ -1053,6 +1477,7 @@ def create_admin_router(
             raise HTTPException(
                 status_code=HTTP_403_FORBIDDEN, detail="Model not registered"
             )
+        await enforce_permission(request, session, model_config, "view")
 
         # Get subtype from query or form
         if not subtype:
