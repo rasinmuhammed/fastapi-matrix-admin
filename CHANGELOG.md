@@ -9,9 +9,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ### Added
 
 - Added a richer admin extension surface with `ModelAdmin`, `AdminAction`, `DetailPanel`, and `DashboardCard`
+- Added global power-user keyboard shortcuts (`/` for Search, `n` for Quick Create Modal)
+- Wired Dashboard Activity Stream and Recent Logs directly to the `AuditLog` database for real-team metrics
 - Added model-level permissions for `view`, `create`, `edit`, `delete`, and `export`
-- Added request-aware row scoping hooks for tenant-aware or role-aware admin views
-- Added bulk actions and a custom action execution endpoint
 - Added relationship search APIs for large foreign-key datasets
 - Added JSON field rendering support and detail panel rendering on record pages
 - Added `ROADMAP.md`, `SUPPORT.md`, migration notes, integrations docs, FAQ-style docs, and LLM-readable docs indexes

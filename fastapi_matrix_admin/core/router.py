@@ -503,15 +503,35 @@ def create_admin_router(
             )
 
         # Chart data (sample data if no database)
+        # Chart data (sample data if no database)
         activity_labels = []
         activity_values = []
 
-        # Last 7 days
-        for i in range(6, -1, -1):
-            date = datetime.now() - timedelta(days=i)
-            activity_labels.append(date.strftime("%a"))
-            # Sample data (in production, query actual activity)
-            activity_values.append(max(0, 10 - i * 2 + (i % 3)))
+        from sqlalchemy import desc
+        from datetime import timedelta
+
+        if session and audit_logger:
+            # Query actual activity from audit log
+            for i in range(6, -1, -1):
+                date = datetime.now() - timedelta(days=i)
+                activity_labels.append(date.strftime("%a"))
+                
+                start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date + timedelta(days=1)
+                
+                stmt = select(func.count()).select_from(audit_logger.audit_model).where(
+                    audit_logger.audit_model.created_at >= start_date,
+                    audit_logger.audit_model.created_at < end_date
+                )
+                res = await session.execute(stmt)
+                count = res.scalar() or 0
+                activity_values.append(count)
+        else:
+            # Last 7 days sample
+            for i in range(6, -1, -1):
+                date = datetime.now() - timedelta(days=i)
+                activity_labels.append(date.strftime("%a"))
+                activity_values.append(max(0, 10 - i * 2 + (i % 3)))
 
         # Model distribution data
         model_labels = list(model_counts.keys())[:5]  # Top 5 models
@@ -531,7 +551,19 @@ def create_admin_router(
 
         # Recent activity (if audit logging enabled)
         recent_activity = []
-        # TODO: Query audit log if available
+        if session and audit_logger:
+            from sqlalchemy import desc
+            stmt = select(audit_logger.audit_model).order_by(desc(audit_logger.audit_model.created_at)).limit(10)
+            result = await session.execute(stmt)
+            logs = result.scalars().all()
+            for log in logs:
+                action_str = log.action.value if hasattr(log.action, 'value') else str(log.action)
+                recent_activity.append({
+                    "action": action_str,
+                    "model_name": log.model_name,
+                    "username": log.username or "SYSTEM",
+                    "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                })
 
         # System KPIs (Observer Module)
         try:
@@ -994,8 +1026,25 @@ def create_admin_router(
                 await session.commit()
             except Exception as e:
                 await session.rollback()
-                # TODO: Return to form with error message
-                raise HTTPException(status_code=400, detail=str(e))
+                # Re-render form with error message
+                fragment_token = signer.create_fragment_token(model, action="load_fragment")
+                prefix = request.scope.get("root_path", "") + router.prefix
+                fragment_url = f"{prefix}/fragments?token={fragment_token}"
+                
+                context = {
+                    **get_common_context(request),
+                    "model_config": model_config,
+                    "fields": fields,
+                    "values": create_data,
+                    "errors": {"__all__": [str(e)]},
+                    "record_id": None,
+                    "fragment_url": fragment_url,
+                    "csrf_token": signer.sign({"action": "create", "model": model}),
+                    "current_user": current_user,
+                    "detail_panels": model_config.detail_panels,
+                    "delete_token": signer.sign({"model": model, "action": "delete"}),
+                }
+                return templates.TemplateResponse("pages/edit.html", context)
 
         return RedirectResponse(
             url=str(request.url_for("admin:list", model=model)),

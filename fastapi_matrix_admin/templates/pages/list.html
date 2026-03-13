@@ -37,7 +37,7 @@
             {% if not model_config.readonly %}
             <div class="flex items-center space-x-2">
                 <a href="#"
-                    onclick="window.location.href = '{{ url_for('admin:export_csv', model=model_config.name) }}' + window.location.search; return false;"
+                    onclick='window.location.href = "{{ url_for("admin:export_csv", model=model_config.name) }}" + window.location.search; return false;'
                     class="group relative overflow-hidden flex items-center space-x-2 rounded-lg bg-blue-500/10 border border-blue-500/30 px-4 py-2 hover:bg-blue-500/20 hover:border-blue-400/50 transition-all duration-300">
                     <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -505,40 +505,6 @@
         }
     });
 
-    // Toast Notifications
-    function showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-
-        const colors = {
-            success: 'border-emerald-500/30 bg-emerald-950/90 text-emerald-100',
-            error: 'border-red-500/30 bg-red-950/90 text-red-100',
-            info: 'border-blue-500/30 bg-blue-950/90 text-blue-100'
-        };
-
-        const icons = {
-            success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />',
-            error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />',
-            info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
-        };
-
-        toast.className = `flex items-center space-x-3 rounded-lg border ${colors[type]} p-4 shadow-lg animate-toast-in`;
-        toast.innerHTML = `
-        <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            ${icons[type]}
-        </svg>
-        <span class="font-mono text-sm font-medium">${message}</span>
-    `;
-
-        container.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.transition = 'opacity 0.3s ease-out';
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-
     // Close modal on escape
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
@@ -569,21 +535,5 @@
             this.action = `{{ url_for('admin:run_action', model=model_config.name, action_name='bulk_delete') }}`.replace('bulk_delete', bulkActionSelect.value);
         });
     }
-
-    document.addEventListener('keydown', function (event) {
-        if (event.target.matches('input, textarea, select')) return;
-
-        if (event.key === '/') {
-            event.preventDefault();
-            document.getElementById('search-input')?.focus();
-        }
-
-        if (event.key.toLowerCase() === 'n') {
-            const createUrl = document.querySelector('[data-create-url]')?.dataset.createUrl;
-            if (createUrl) {
-                window.location.href = createUrl;
-            }
-        }
-    });
 </script>
 {% endblock %}

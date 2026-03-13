@@ -346,6 +346,41 @@
                 {% block content %}{% endblock %}
             </div>
         </main>
+        
+        <!-- Toast Container -->
+        <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-3"></div>
+        
+        <!-- Global Create Modal -->
+        <div id="global-create-modal" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black/80 backdrop-blur-sm">
+            <div class="relative p-4 w-full max-w-md max-h-full">
+                <div class="matrix-panel relative rounded-[1.5rem] shadow-2xl border border-emerald-500/30 overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-5 border-b border-emerald-500/20 bg-emerald-950/20">
+                        <h3 class="font-mono text-lg font-bold text-white uppercase tracking-wider">
+                            Select Model to Create
+                        </h3>
+                        <button type="button" class="text-emerald-400 hover:bg-emerald-950/50 hover:text-emerald-300 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center transition-colors border border-transparent hover:border-emerald-500/30" onclick="closeCreateModal()">
+                            <svg class="w-3 h-3" font-mono viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Body -->
+                    <div class="p-5 space-y-3">
+                        {% if models %}
+                            {% for model_config in models %}
+                            <a href="{{ url_for('admin:create', model=model_config.name) }}" class="group flex items-center justify-between p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/20 hover:bg-emerald-900/40 hover:border-emerald-400/50 transition-all">
+                                <span class="font-mono text-emerald-100 group-hover:text-white">{{ model_config.menu_label or model_config.name }}</span>
+                                <span class="matrix-kbd group-hover:bg-emerald-500/20 text-[10px]">↵</span>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-sm font-mono text-emerald-600 text-center py-4">No models registered.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- HTMX (vendored) -->
@@ -367,9 +402,100 @@
         document.body.addEventListener('htmx:responseError', function (evt) {
             console.error('HTMX Error:', evt.detail);
         });
+        
+        // Global Keyboard Shortcuts
+        function openCreateModal() {
+            const modal = document.getElementById('global-create-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+        
+        function closeCreateModal() {
+            const modal = document.getElementById('global-create-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Global Toast Notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'border-emerald-500/30 bg-emerald-950/90 text-emerald-100',
+                error: 'border-red-500/30 bg-red-950/90 text-red-100',
+                info: 'border-blue-500/30 bg-blue-950/90 text-blue-100'
+            };
+            const icons = {
+                success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />',
+                error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />',
+                info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
+            };
+
+            toast.className = `flex items-center space-x-3 rounded-lg border ${colors[type]} p-4 shadow-lg animate-toast-in`;
+            toast.style.cssText = "animation: toast-in 0.3s ease-out;";
+            toast.innerHTML = `
+                <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icons[type]}</svg>
+                <span class="font-mono text-sm font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease-out';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        document.addEventListener('keydown', function(event) {
+            // Avoid triggering shortcuts when typing in inputs
+            const isInput = event.target.matches('input, textarea, select') || event.target.isContentEditable;
+            if (isInput) {
+                if (event.key === 'Escape') event.target.blur();
+                return;
+            }
+            
+            const key = event.key.toLowerCase();
+            
+            // Escape to close open modals
+             if (event.key === 'Escape') {
+                 closeCreateModal();
+             }
+            
+            // '/' for Search
+            if (event.key === '/' || event.key === '?') {
+                const searchInput = document.getElementById('search-input') || document.querySelector('input[type="search"]');
+                if (searchInput) {
+                    event.preventDefault();
+                    searchInput.focus();
+                } else {
+                    // Feedback index page or other pages without search
+                    showToast("Search is available on listing pages", "info");
+                }
+            }
+
+            // 'N' for New Record modal
+            if (key === 'n') {
+                event.preventDefault();
+                openCreateModal();
+            }
+        });
     </script>
+    <style>
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
 
     {% block scripts %}{% endblock %}
 </body>
 
 </html>
+
