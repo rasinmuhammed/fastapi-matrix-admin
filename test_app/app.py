@@ -165,25 +165,31 @@ admin.register(
 
 from fastapi_matrix_admin import AdminAction
 
+
 async def promote_employee(request, session, model, ids, user, config):
     from sqlalchemy import select
     from fastapi.responses import RedirectResponse
-    
+
     if not ids:
-        return RedirectResponse(url=request.url_for("admin:list", model="Employees"), status_code=303)
-        
+        return RedirectResponse(
+            url=request.url_for("admin:list", model="Employees"), status_code=303
+        )
+
     stmt = select(model).where(model.id.in_([int(i) for i in ids]))
     result = await session.execute(stmt)
     employees = result.scalars().all()
-    
+
     for emp in employees:
         if emp.salary:
             emp.salary += 10000
         else:
             emp.salary = 10000
-            
+
     await session.commit()
-    return RedirectResponse(url=request.url_for("admin:list", model="Employees"), status_code=303)
+    return RedirectResponse(
+        url=request.url_for("admin:list", model="Employees"), status_code=303
+    )
+
 
 admin.register(
     Employee,
@@ -198,9 +204,9 @@ admin.register(
             label="Promote Employee (+10k)",
             handler=promote_employee,
             confirmation_message="Are you sure you want to promote these employees? Their salaries will increase by $10,000.",
-            bulk=True
+            bulk=True,
         )
-    ]
+    ],
 )
 
 admin.register(

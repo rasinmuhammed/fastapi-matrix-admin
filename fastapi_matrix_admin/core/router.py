@@ -515,13 +515,17 @@ def create_admin_router(
             for i in range(6, -1, -1):
                 date = datetime.now() - timedelta(days=i)
                 activity_labels.append(date.strftime("%a"))
-                
+
                 start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
                 end_date = start_date + timedelta(days=1)
-                
-                stmt = select(func.count()).select_from(audit_logger.audit_model).where(
-                    audit_logger.audit_model.created_at >= start_date,
-                    audit_logger.audit_model.created_at < end_date
+
+                stmt = (
+                    select(func.count())
+                    .select_from(audit_logger.audit_model)
+                    .where(
+                        audit_logger.audit_model.created_at >= start_date,
+                        audit_logger.audit_model.created_at < end_date,
+                    )
                 )
                 res = await session.execute(stmt)
                 count = res.scalar() or 0
@@ -553,17 +557,28 @@ def create_admin_router(
         recent_activity = []
         if session and audit_logger:
             from sqlalchemy import desc
-            stmt = select(audit_logger.audit_model).order_by(desc(audit_logger.audit_model.created_at)).limit(10)
+
+            stmt = (
+                select(audit_logger.audit_model)
+                .order_by(desc(audit_logger.audit_model.created_at))
+                .limit(10)
+            )
             result = await session.execute(stmt)
             logs = result.scalars().all()
             for log in logs:
-                action_str = log.action.value if hasattr(log.action, 'value') else str(log.action)
-                recent_activity.append({
-                    "action": action_str,
-                    "model_name": log.model_name,
-                    "username": log.username or "SYSTEM",
-                    "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S")
-                })
+                action_str = (
+                    log.action.value
+                    if hasattr(log.action, "value")
+                    else str(log.action)
+                )
+                recent_activity.append(
+                    {
+                        "action": action_str,
+                        "model_name": log.model_name,
+                        "username": log.username or "SYSTEM",
+                        "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
 
         # System KPIs (Observer Module)
         try:
@@ -1027,10 +1042,12 @@ def create_admin_router(
             except Exception as e:
                 await session.rollback()
                 # Re-render form with error message
-                fragment_token = signer.create_fragment_token(model, action="load_fragment")
+                fragment_token = signer.create_fragment_token(
+                    model, action="load_fragment"
+                )
                 prefix = request.scope.get("root_path", "") + router.prefix
                 fragment_url = f"{prefix}/fragments?token={fragment_token}"
-                
+
                 context = {
                     **get_common_context(request),
                     "model_config": model_config,
