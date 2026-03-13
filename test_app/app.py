@@ -10,7 +10,7 @@ from sqlalchemy import String, Integer, Boolean, Float, ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from fastapi_matrix_admin import MatrixAdmin
+from fastapi_matrix_admin import MatrixAdmin, AdminAction
 from fastapi_matrix_admin.auth.models import AdminUserMixin, pwd_context
 
 
@@ -162,8 +162,6 @@ admin.register(
     searchable_fields=["name", "industry"],
     filter_fields=["active", "industry"],
 )
-
-from fastapi_matrix_admin import AdminAction
 
 
 async def promote_employee(request, session, model, ids, user, config):

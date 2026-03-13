@@ -508,7 +508,6 @@ def create_admin_router(
         activity_values = []
 
         from sqlalchemy import desc
-        from datetime import timedelta
 
         if session and audit_logger:
             # Query actual activity from audit log
