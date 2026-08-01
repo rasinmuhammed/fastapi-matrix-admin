@@ -4,6 +4,7 @@ include CHANGELOG.md
 include CONTRIBUTING.md
 include SECURITY.md
 include pyproject.toml
+include opsdeck/py.typed
 
 recursive-include opsdeck/templates *.html
 recursive-include opsdeck/statics *

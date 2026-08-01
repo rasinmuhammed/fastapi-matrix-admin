@@ -1,5 +1,5 @@
 """
-CRUD Base Operations for FastAPI Shadcn Admin.
+CRUD base operations for OpsDeck.
 
 Provides async database operations for SQLAlchemy models.
 """
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generic, Type, TypeVar, Sequence, Dict
 from sqlalchemy import select, func, delete as sa_delete, or_, and_
+from sqlalchemy import inspect as sqla_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
@@ -35,6 +36,24 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ):
         """Apply an optional query transform hook."""
         return query_transform(query) if query_transform else query
+
+    def _primary_key_column(self):
+        """Return the model's single primary-key column."""
+        mapper = sqla_inspect(self.model)
+        primary_keys = mapper.primary_key
+        if len(primary_keys) != 1:
+            raise ValueError(
+                f"{self.model.__name__} must have exactly one primary key column "
+                "to use OpsDeck CRUD operations."
+            )
+        return primary_keys[0]
+
+    @staticmethod
+    def _normalize_pagination(page: int, per_page: int) -> tuple[int, int]:
+        """Clamp pagination values to predictable, database-friendly bounds."""
+        page = max(int(page or 1), 1)
+        per_page = min(max(int(per_page or 25), 1), 500)
+        return page, per_page
 
     def _apply_filters(self, query: Any, filters: dict[str, Any] | None) -> Any:
         """Apply exact and operator-based filters to a SQLAlchemy query."""
@@ -95,7 +114,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Model instance or None if not found
         """
-        query = select(self.model).where(self.model.id == id)
+        pk = self._primary_key_column()
+        query = select(self.model).where(pk == id)
         query = self._apply_query_transform(query, query_transform)
 
         # Eager load relationships to avoid N+1 queries
@@ -135,6 +155,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Tuple of (records, total_count)
         """
+        page, per_page = self._normalize_pagination(page, per_page)
+
         # Base query
         query = select(self.model)
         query = self._apply_query_transform(query, query_transform)
@@ -270,12 +292,20 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             True if deleted, False if not found
         """
+        pk = self._primary_key_column()
+        delete_id = id
+
         if query_transform:
-            scoped_record = await self.get(session, id, query_transform=query_transform)
-            if not scoped_record:
+            scoped_query = self._apply_query_transform(
+                select(pk).where(pk == id),
+                query_transform,
+            )
+            scoped_result = await session.execute(scoped_query)
+            delete_id = scoped_result.scalar_one_or_none()
+            if delete_id is None:
                 return False
 
-        result = await session.execute(sa_delete(self.model).where(self.model.id == id))
+        result = await session.execute(sa_delete(self.model).where(pk == delete_id))
         await session.flush()
 
         return result.rowcount > 0
@@ -322,9 +352,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Returns:
             Number of deleted records
         """
+        pk = self._primary_key_column()
+
         if query_transform:
             scoped_ids_query = self._apply_query_transform(
-                select(self.model.id).where(self.model.id.in_(ids)),
+                select(pk).where(pk.in_(ids)),
                 query_transform,
             )
             scoped_ids_result = await session.execute(scoped_ids_query)
@@ -336,7 +368,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             return 0
 
         result = await session.execute(
-            sa_delete(self.model).where(self.model.id.in_(scoped_ids))
+            sa_delete(self.model).where(pk.in_(scoped_ids))
         )
         await session.flush()
 

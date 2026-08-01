@@ -1,5 +1,5 @@
 """
-Authentication and Authorization for FastAPI Shadcn Admin.
+Authentication and authorization for OpsDeck.
 
 Provides user authentication, session management, and RBAC (Role-Based Access Control).
 """
@@ -7,7 +7,7 @@ Provides user authentication, session management, and RBAC (Role-Based Access Co
 from __future__ import annotations
 
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import String, Boolean, Integer, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,6 +20,11 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 # Python 3.13+ (it imports the removed stdlib crypt module).
 # Existing passlib-generated argon2 hashes remain verifiable.
 pwd_context = PasswordHash((Argon2Hasher(),))
+
+
+def utcnow() -> datetime:
+    """Return a naive UTC datetime for SQLAlchemy DateTime columns and sessions."""
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 # --- SQLAlchemy Models ---
@@ -51,7 +56,7 @@ class AdminUserMixin:
     totp_secret: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Metadata
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     def has_role(self, role: str) -> bool:
@@ -78,7 +83,7 @@ class AdminUserMixin:
 
     def update_last_login(self) -> None:
         """Update last login timestamp."""
-        self.last_login = datetime.utcnow()
+        self.last_login = utcnow()
 
 
 # --- Pydantic Schemas ---
@@ -203,7 +208,7 @@ class SessionData(BaseModel):
 
     def is_expired(self) -> bool:
         """Check if session is expired."""
-        return datetime.utcnow() > self.expires_at
+        return utcnow() > self.expires_at
 
     @classmethod
     def create(
@@ -213,7 +218,7 @@ class SessionData(BaseModel):
     ) -> "SessionData":
         """Create session data from user."""
         expiry_hours = 720 if remember_me else 24  # 30 days or 1 day
-        expires_at = datetime.utcnow() + timedelta(hours=expiry_hours)
+        expires_at = utcnow() + timedelta(hours=expiry_hours)
 
         return cls(
             user_id=user.id,

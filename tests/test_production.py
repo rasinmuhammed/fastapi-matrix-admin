@@ -39,6 +39,25 @@ class TestUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class TenantRecord(Base):
+    """Record used to verify row-scoped destructive operations."""
+
+    __tablename__ = "tenant_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(100))
+
+
+class CustomPrimaryKeyRecord(Base):
+    """Record used to verify models do not need an ``id`` attribute."""
+
+    __tablename__ = "custom_primary_key_records"
+
+    slug: Mapped[str] = mapped_column(String(100), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+
+
 class TestAdminUser(AdminUserMixin, Base):
     """Test admin user."""
 
@@ -228,6 +247,60 @@ class TestDatabaseCRUD:
         user = await crud.get(async_session, id=user_id)
         assert user is None
 
+    @pytest.mark.asyncio
+    async def test_get_supports_non_id_primary_key(self, async_session):
+        """Test CRUD lookups use the mapped primary key, not a hardcoded id column."""
+        from opsdeck.core.crud import CRUDBase
+
+        crud = CRUDBase(CustomPrimaryKeyRecord)
+
+        await crud.create(
+            async_session,
+            obj_in={"slug": "billing", "name": "Billing"},
+        )
+
+        record = await crud.get(async_session, id="billing")
+
+        assert record is not None
+        assert record.slug == "billing"
+        assert record.name == "Billing"
+
+    @pytest.mark.asyncio
+    async def test_scoped_delete_does_not_delete_out_of_scope_record(self, async_session):
+        """Test row scoping is preserved in the actual delete statement."""
+        from opsdeck.core.crud import CRUDBase
+
+        crud = CRUDBase(TenantRecord)
+        visible = await crud.create(
+            async_session,
+            obj_in={"organization_id": 1, "name": "Visible"},
+        )
+        hidden = await crud.create(
+            async_session,
+            obj_in={"organization_id": 2, "name": "Hidden"},
+        )
+
+        def tenant_one_only(query):
+            return query.where(TenantRecord.organization_id == 1)
+
+        deleted = await crud.delete(
+            async_session,
+            id=hidden.id,
+            query_transform=tenant_one_only,
+        )
+
+        assert deleted is False
+        assert await crud.get(async_session, id=hidden.id) is not None
+
+        deleted = await crud.delete(
+            async_session,
+            id=visible.id,
+            query_transform=tenant_one_only,
+        )
+
+        assert deleted is True
+        assert await crud.get(async_session, id=visible.id) is None
+
 
 # --- Authentication Tests ---
 
@@ -312,7 +385,6 @@ class TestAuthentication:
 class TestAuditLogging:
     """Test audit logging functionality."""
 
-    @pytest.mark.xfail(reason="Audit table not created in test fixtures yet")
     @pytest.mark.asyncio
     async def test_log_create(self, async_session):
         """Test logging create operation."""
@@ -345,7 +417,6 @@ class TestAuditLogging:
         assert log.username == "admin"
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Audit table not created in test fixtures yet")
     async def test_log_update_with_changes(self, async_session):
         """Test logging an update with changes."""
         logger = AuditLogger(TestAuditLog)
@@ -379,7 +450,6 @@ class TestAuditLogging:
         assert "email" not in log.changes  # Unchanged field not logged
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Audit table not created in test fixtures yet")
     async def test_no_log_if_no_changes(self, async_session):
         """Test that no log is created if there are no changes."""
         logger = AuditLogger(TestAuditLog)

@@ -1,5 +1,5 @@
 """
-Audit Logging for FastAPI Shadcn Admin.
+Audit logging for OpsDeck.
 
 Tracks all CRUD operations with user context, IP addresses, and field-level changes.
 """
@@ -7,14 +7,19 @@ Tracks all CRUD operations with user context, IP addresses, and field-level chan
 from __future__ import annotations
 
 from typing import Optional, Dict, Any, TYPE_CHECKING
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from sqlalchemy import String, Integer, DateTime, JSON as SQLJSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def utcnow() -> datetime:
+    """Return a naive UTC datetime for SQLAlchemy DateTime columns."""
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class AuditAction(str, Enum):
@@ -26,17 +31,18 @@ class AuditAction(str, Enum):
     VIEW = "view"  # Optional: track views for sensitive models
 
 
-class AuditLog(DeclarativeBase):
+class AuditLog:
     """
-    Audit log model for tracking all changes.
+    Audit log mixin for tracking all changes.
 
     Stores who changed what, when, and from where.
 
     Usage:
         from opsdeck.audit.models import AuditLog
-        from sqlalchemy.orm import declarative_base
+        from sqlalchemy.orm import DeclarativeBase
 
-        Base = declarative_base()
+        class Base(DeclarativeBase):
+            pass
 
         class AdminAuditLog(AuditLog, Base):
             __tablename__ = "audit_logs"
@@ -67,7 +73,7 @@ class AuditLog(DeclarativeBase):
 
     # Timestamp
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True
+        DateTime, default=utcnow, index=True
     )
 
     @classmethod

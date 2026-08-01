@@ -1,5 +1,5 @@
 """
-Core Admin class for FastAPI Shadcn Admin.
+Core admin class for OpsDeck.
 
 This is the main entry point for creating an admin interface.
 It orchestrates all components: registry, security, routing, database.

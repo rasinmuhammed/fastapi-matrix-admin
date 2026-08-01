@@ -1,5 +1,5 @@
 """
-Security module for FastAPI Shadcn Admin.
+Security module for OpsDeck.
 
 Implements:
 - URLSigner: Signed tokens for Anti-IDOR protection
@@ -44,7 +44,8 @@ class URLSigner:
 
         Args:
             secret_key: Secret key for signing. Must be kept secure.
-            salt: Additional salt for the signature (default: "fastapi-shadcn-admin")
+            salt: Additional salt for the signature. The default keeps legacy
+                token compatibility from before the OpsDeck rename.
         """
         if not secret_key or len(secret_key) < 16:
             raise ValueError("Secret key must be at least 16 characters long")

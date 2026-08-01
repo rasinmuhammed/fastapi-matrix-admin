@@ -1,4 +1,4 @@
-"""Audit logging package for FastAPI Shadcn Admin."""
+"""Audit logging package for OpsDeck."""
 
 from opsdeck.audit.models import (
     AuditLog,

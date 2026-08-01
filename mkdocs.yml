@@ -1,5 +1,5 @@
 site_name: OpsDeck
-site_description: FastAPI-native admin for async SQLAlchemy teams.
+site_description: OpsDeck is a production-ready FastAPI admin panel for async SQLAlchemy teams, with permissions, row scoping, audit hooks, exports, and a zero-build-step UI.
 site_url: https://rasinmuhammed.github.io/opsdeck/
 repo_url: https://github.com/rasinmuhammed/opsdeck
 repo_name: rasinmuhammed/opsdeck
@@ -34,6 +34,7 @@ theme:
     repo: fontawesome/brands/github
 
 markdown_extensions:
+  - meta
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -64,6 +65,7 @@ nav:
       - Migration Notes: guide/migration.md
       - Integrations: guide/integrations.md
   - Recipes:
+      - Migration From fastapi-admin: recipes/migration-from-fastapi-admin.md
       - Auth And Audit: recipes/auth-and-audit.md
       - Multi-Tenant Scoping: recipes/multi-tenant-scoping.md
       - Actions And Ops: recipes/actions-and-ops.md

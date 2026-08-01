@@ -1,5 +1,5 @@
 """
-Admin Router for FastAPI Shadcn Admin.
+Admin router for OpsDeck.
 
 Implements all admin endpoints with security validation:
 - Dashboard and list views

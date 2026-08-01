@@ -1,5 +1,5 @@
 """
-Database session management for FastAPI Shadcn Admin.
+Database session management for OpsDeck.
 
 Provides async session dependency injection.
 """

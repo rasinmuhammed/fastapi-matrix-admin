@@ -1,5 +1,5 @@
 """
-CSV/Excel Export functionality for FastAPI Shadcn Admin.
+CSV/Excel export functionality for OpsDeck.
 
 Provides utilities to export model data to CSV and Excel formats.
 """

@@ -1,5 +1,5 @@
 """
-Model Registry for FastAPI Shadcn Admin.
+Model registry for OpsDeck.
 
 Provides type-safe model registration and validation with support for
 polymorphic models (Pydantic discriminated unions).

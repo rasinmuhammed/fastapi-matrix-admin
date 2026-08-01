@@ -1,6 +1,10 @@
+---
+description: OpsDeck is a production-ready FastAPI admin panel for async SQLAlchemy teams, with permissions, row scoping, audit hooks, exports, and a zero-build-step UI.
+---
+
 # OpsDeck
 
-OpsDeck is the FastAPI-native admin for async SQLAlchemy teams who want an interface that feels deliberate, memorable, and operationally serious.
+OpsDeck is the production-ready FastAPI admin for async SQLAlchemy teams who want an interface that feels deliberate, memorable, and operationally serious.
 
 ## Why it wins attention
 
@@ -8,6 +12,7 @@ OpsDeck is the FastAPI-native admin for async SQLAlchemy teams who want an inter
 - pure Python integration path
 - FastAPI + SQLAlchemy focus instead of generic ORM sprawl
 - explicit permissions and row scoping
+- audit hooks, exports, bulk actions, and relationship-aware forms
 - a simple default and a deeper escape hatch
 
 ## Why teams keep it

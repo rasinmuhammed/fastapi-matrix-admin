@@ -1,5 +1,5 @@
 """
-Pydantic CoreSchema Walker (The "Brain") for FastAPI Shadcn Admin.
+Pydantic CoreSchema walker for OpsDeck.
 
 This module inspects Pydantic v2 CoreSchema to generate an intermediate
 FieldDefinition representation that Jinja templates can understand.

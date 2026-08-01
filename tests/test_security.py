@@ -1,5 +1,5 @@
 """
-Security Tests for FastAPI Shadcn Admin
+Security tests for OpsDeck.
 
 Tests the security architecture:
 - Signed URL tokens (Anti-IDOR)

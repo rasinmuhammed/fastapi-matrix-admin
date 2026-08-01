@@ -1,5 +1,5 @@
 """
-Auto-discovery module for FastAPI Shadcn Admin.
+Auto-discovery module for OpsDeck.
 
 Automatically discovers and registers SQLAlchemy models with smart defaults.
 """

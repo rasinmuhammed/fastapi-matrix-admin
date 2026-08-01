@@ -13,7 +13,7 @@ authors = [
     { name = "opsdeck contributors" }
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Framework :: FastAPI",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -25,7 +25,19 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Typing :: Typed",
 ]
-keywords = ["fastapi", "fastapi admin", "sqlalchemy admin", "admin panel", "pydantic", "htmx", "async sqlalchemy"]
+keywords = [
+    "fastapi",
+    "fastapi admin",
+    "fastapi-admin alternative",
+    "sqlalchemy admin",
+    "async sqlalchemy admin",
+    "admin panel",
+    "backoffice",
+    "internal tools",
+    "pydantic",
+    "htmx",
+    "ai coding assistants",
+]
 
 dependencies = [
     "fastapi>=0.100.0",
@@ -54,6 +66,11 @@ dev = [
     "ruff>=0.1.0",
     "bandit>=1.7",
 ]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "pymdown-extensions>=10.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/rasinmuhammed/opsdeck"
@@ -64,6 +81,11 @@ Changelog = "https://github.com/rasinmuhammed/opsdeck/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["opsdeck"]
+artifacts = [
+    "opsdeck/py.typed",
+    "opsdeck/templates/**/*.html",
+    "opsdeck/statics/*",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

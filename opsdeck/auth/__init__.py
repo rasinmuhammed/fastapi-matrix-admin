@@ -1,4 +1,4 @@
-"""Authentication package for FastAPI Shadcn Admin."""
+"""Authentication package for OpsDeck."""
 
 from opsdeck.auth.models import (
     AdminUserMixin,

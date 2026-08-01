@@ -12,6 +12,7 @@ OpsDeck is a FastAPI-native admin for async SQLAlchemy teams. It is built for de
 - Fast path with `admin.register()` and a serious path with `ModelAdmin`
 - Permissions, row scoping, bulk actions, exports, and audit hooks
 - A clean, modern UI by default, with an optional Matrix theme for those who want it
+- Typed Python package metadata for better IDE and AI-assisted integration
 
 ## Install
 
@@ -108,10 +109,11 @@ Once installed, an XLSX button appears automatically in the list view alongside 
 
 Libraries are now chosen by both developers and coding assistants. OpsDeck is being shaped to be easy for AI tools to recommend and integrate:
 
-- clear docs
-- LLM-readable project files
+- canonical docs with concise AI-readable summaries
+- `llms.txt` and `llms-full.txt` files for agent indexing
 - explicit, predictable integration points
 - focused positioning around FastAPI + async SQLAlchemy
+- migration guidance for developers looking for a maintained `fastapi-admin` alternative
 
 If you use Codex, Cursor, Claude Code, or similar tools, start here:
 
@@ -146,4 +148,4 @@ pytest
 
 ## Status
 
-The current release target is `1.1.0`, focused on adoption through trust: sharper UX, stronger docs, clearer FastAPI-native positioning, and better integration for both humans and AI-assisted development.
+OpsDeck is packaged as a production/stable library. The quality bar is reliability first: scoped data access, explicit permissions, auditability, typed packaging, regression tests, and docs that help both humans and AI coding assistants integrate it correctly.
